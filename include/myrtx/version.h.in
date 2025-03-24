@@ -1,0 +1,14 @@
+/**
+ * @file version.h
+ * @brief Version information for the myrtx library
+ */
+
+#ifndef MYRTX_VERSION_H
+#define MYRTX_VERSION_H
+
+#define MYRTX_VERSION_MAJOR @myrtx_VERSION_MAJOR@
+#define MYRTX_VERSION_MINOR @myrtx_VERSION_MINOR@
+#define MYRTX_VERSION_PATCH @myrtx_VERSION_PATCH@
+#define MYRTX_VERSION "@myrtx_VERSION@"
+
+#endif /* MYRTX_VERSION_H */ 

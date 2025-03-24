@@ -1,0 +1,67 @@
+# Build-Verzeichnisse
+build/
+cmake-build-*/
+out/
+
+# Kompilierte Objekte und Binaries
+*.o
+*.ko
+*.obj
+*.elf
+*.ilk
+*.map
+*.exp
+*.gch
+*.pch
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Abhängigkeitsdateien
+*.d
+
+# Vorverarbeitete Dateien
+*.i
+*.ii
+
+# Debug-Dateien
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel-Module
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+
+# Editor-/IDE-spezifische Dateien
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# CMake-generierte Dateien
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+
+# Gegenerierte Header
+include/myrtx/version.h 
