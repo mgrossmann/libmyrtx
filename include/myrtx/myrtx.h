@@ -13,5 +13,6 @@
 #include "myrtx/context/context.h"
 #include "myrtx/string/string.h"
 #include "myrtx/collections/hash_table.h"
+#include "myrtx/collections/avl_tree.h"
 
 #endif /* MYRTX_H */ 

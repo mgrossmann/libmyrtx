@@ -3,6 +3,7 @@
 target_sources(myrtx
     PRIVATE
         hash_table.c
+        avl_tree.c
 )
 
 target_include_directories(myrtx

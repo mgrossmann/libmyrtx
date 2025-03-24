@@ -23,4 +23,8 @@ target_include_directories(string_type_example PRIVATE ${CMAKE_SOURCE_DIR}/inclu
 # Collections examples
 add_executable(hash_table_example hash_table_example.c)
 target_link_libraries(hash_table_example PRIVATE myrtx)
-target_include_directories(hash_table_example PRIVATE ${CMAKE_SOURCE_DIR}/include) 
+target_include_directories(hash_table_example PRIVATE ${CMAKE_SOURCE_DIR}/include)
+
+add_executable(avl_tree_example avl_tree_example.c)
+target_link_libraries(avl_tree_example PRIVATE myrtx)
+target_include_directories(avl_tree_example PRIVATE ${CMAKE_SOURCE_DIR}/include) 
