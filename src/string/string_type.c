@@ -8,7 +8,7 @@
 #include <limits.h>
 
 /*
- * New string type implementation
+ * String type implementation
  */
 
 /* Helper function to allocate string memory */
@@ -498,8 +498,93 @@ bool myrtx_string_ends_with(const myrtx_string_t* str, const char* suffix) {
     return memcmp(str->data + (str->length - suffix_len), suffix, suffix_len) == 0;
 }
 
+bool myrtx_string_replace(myrtx_string_t* str, const char* old_str, const char* new_str) {
+    if (!str || !str->data || !old_str || !new_str) {
+        return false;
+    }
+    
+    size_t old_len = strlen(old_str);
+    if (old_len == 0) {
+        return true;  /* Nothing to replace */
+    }
+    
+    /* Create a buffer for the result */
+    myrtx_string_t result = myrtx_string_create(str->arena, str->length);
+    if (!result.data) {
+        return false;
+    }
+    
+    const char* pos = str->data;
+    const char* find;
+    
+    /* Find all occurrences and build the result */
+    while ((find = strstr(pos, old_str)) != NULL) {
+        /* Append text up to the match */
+        size_t prefix_len = find - pos;
+        if (prefix_len > 0) {
+            if (!myrtx_string_append_buffer(&result, pos, prefix_len)) {
+                myrtx_string_free(&result, true);
+                return false;
+            }
+        }
+        
+        /* Append replacement text */
+        if (!myrtx_string_append(&result, new_str)) {
+            myrtx_string_free(&result, true);
+            return false;
+        }
+        
+        /* Advance position past the match */
+        pos = find + old_len;
+    }
+    
+    /* Append trailing text */
+    if (*pos != '\0') {
+        if (!myrtx_string_append(&result, pos)) {
+            myrtx_string_free(&result, true);
+            return false;
+        }
+    }
+    
+    /* Replace original string with result */
+    if (str->arena) {
+        /* With arena, we need to allocate new memory */
+        char* new_data = string_alloc(str->arena, result.length + 1);
+        if (!new_data) {
+            myrtx_string_free(&result, true);
+            return false;
+        }
+        
+        memcpy(new_data, result.data, result.length + 1);
+        str->data = new_data;
+    } else {
+        /* With malloc, just swap the buffers */
+        char* tmp = str->data;
+        str->data = result.data;
+        result.data = tmp;
+        
+        size_t tmp_capacity = str->capacity;
+        str->capacity = result.capacity;
+        result.capacity = tmp_capacity;
+    }
+    
+    str->length = result.length;
+    myrtx_string_free(&result, true);
+    
+    return true;
+}
+
 size_t myrtx_string_find(const myrtx_string_t* str, const char* substr) {
-    return myrtx_string_find_from(str, substr, 0);
+    if (!str || !str->data || !substr) {
+        return SIZE_MAX;
+    }
+    
+    const char* found = strstr(str->data, substr);
+    if (!found) {
+        return SIZE_MAX;
+    }
+    
+    return (size_t)(found - str->data);
 }
 
 size_t myrtx_string_find_from(const myrtx_string_t* str, const char* substr, size_t pos) {
@@ -536,146 +621,86 @@ size_t myrtx_string_rfind(const myrtx_string_t* str, const char* substr) {
     return SIZE_MAX;
 }
 
-bool myrtx_string_replace(myrtx_string_t* str, const char* old_str, const char* new_str) {
-    if (!str || !str->data || !old_str || !new_str) {
-        return false;
-    }
-    
-    size_t old_len = strlen(old_str);
-    if (old_len == 0) {
-        return true;  /* Nothing to replace */
-    }
-    
-    size_t new_len = strlen(new_str);
-    
-    /* Find first occurrence */
-    size_t pos = myrtx_string_find(str, old_str);
-    if (pos == SIZE_MAX) {
-        return true;  /* No occurrences found */
-    }
-    
-    /* Create a temporary string for building the result */
-    myrtx_string_t result = myrtx_string_create(str->arena, str->length);
-    if (!result.data) {
-        return false;
-    }
-    
-    size_t last_pos = 0;
-    
-    /* Iterate through all occurrences */
-    while (pos != SIZE_MAX) {
-        /* Append text up to the occurrence */
-        myrtx_string_append_buffer(&result, str->data + last_pos, pos - last_pos);
-        
-        /* Append replacement text */
-        myrtx_string_append(&result, new_str);
-        
-        /* Update position for next search */
-        last_pos = pos + old_len;
-        
-        /* Find next occurrence */
-        pos = myrtx_string_find_from(str, old_str, last_pos);
-    }
-    
-    /* Append trailing text */
-    if (last_pos < str->length) {
-        myrtx_string_append_buffer(&result, str->data + last_pos, str->length - last_pos);
-    }
-    
-    /* Use the result to replace the content of the original string */
-    if (str->arena) {
-        /* With an arena, we allocate new memory */
-        char* new_data = (char*)myrtx_arena_alloc(str->arena, result.length + 1);
-        if (!new_data) {
-            myrtx_string_free(&result, true);
-            return false;
-        }
-        
-        memcpy(new_data, result.data, result.length + 1);
-        str->data = new_data;
-    } else {
-        /* With malloc, we can swap the buffers */
-        char* temp = str->data;
-        str->data = result.data;
-        result.data = temp;
-    }
-    
-    str->length = result.length;
-    str->capacity = result.capacity;
-    
-    /* Free the temporary string */
-    myrtx_string_free(&result, true);
-    
-    return true;
-}
-
 myrtx_string_t* myrtx_string_split(myrtx_arena_t* arena, const myrtx_string_t* str, const char* delimiter, size_t* count) {
     if (!arena || !str || !str->data || !delimiter || !count) {
         return NULL;
     }
     
     size_t delimiter_len = strlen(delimiter);
-    if (delimiter_len == 0) {
-        /* Empty delimiter: split into individual characters */
-        *count = str->length;
-        myrtx_string_t* result = (myrtx_string_t*)myrtx_arena_alloc(arena, (*count) * sizeof(myrtx_string_t));
-        if (!result) {
+    if (delimiter_len == 0 || str->length == 0) {
+        /* Special cases */
+        myrtx_string_t* result;
+        
+        if (str->length == 0) {
+            /* Empty string -> return empty array */
             *count = 0;
             return NULL;
-        }
-        
-        for (size_t i = 0; i < str->length; i++) {
-            result[i] = myrtx_string_from_buffer(arena, &str->data[i], 1);
-            if (!result[i].data) {
+        } else if (delimiter_len == 0) {
+            /* Empty delimiter -> split into individual characters */
+            *count = str->length;
+            result = (myrtx_string_t*)myrtx_arena_alloc(arena, (*count) * sizeof(myrtx_string_t));
+            if (!result) {
                 *count = 0;
                 return NULL;
             }
+            
+            for (size_t i = 0; i < str->length; i++) {
+                result[i] = myrtx_string_from_buffer(arena, &str->data[i], 1);
+                if (!result[i].data) {
+                    *count = 0;
+                    return NULL;
+                }
+            }
+            
+            return result;
         }
-        
-        return result;
     }
     
-    /* First, count the number of delimiters to determine the number of parts */
-    size_t parts = 1;  /* Start with 1 part (even empty string is one part) */
-    size_t pos = 0;
+    /* Count the number of parts */
+    size_t part_count = 1;  /* Start with 1 for the first part */
+    const char* p = str->data;
+    const char* found;
     
-    while ((pos = myrtx_string_find_from(str, delimiter, pos)) != SIZE_MAX) {
-        parts++;
-        pos += delimiter_len;
+    while ((found = strstr(p, delimiter)) != NULL) {
+        part_count++;
+        p = found + delimiter_len;
     }
     
-    /* Allocate array for the parts */
-    myrtx_string_t* result = (myrtx_string_t*)myrtx_arena_alloc(arena, parts * sizeof(myrtx_string_t));
+    /* Allocate array for results */
+    myrtx_string_t* result = (myrtx_string_t*)myrtx_arena_alloc(arena, part_count * sizeof(myrtx_string_t));
     if (!result) {
         *count = 0;
         return NULL;
     }
     
     /* Split the string */
-    size_t start = 0;
-    size_t part = 0;
-    pos = 0;
-    
-    while ((pos = myrtx_string_find_from(str, delimiter, start)) != SIZE_MAX) {
-        /* Extract part */
-        result[part] = myrtx_string_substr(arena, str, start, pos - start);
-        if (!result[part].data) {
-            *count = 0;
-            return NULL;
-        }
+    p = str->data;
+    for (size_t i = 0; i < part_count; i++) {
+        found = strstr(p, delimiter);
         
-        part++;
-        start = pos + delimiter_len;
+        if (found) {
+            /* Not the last part */
+            size_t part_len = found - p;
+            result[i] = myrtx_string_from_buffer(arena, p, part_len);
+            if (!result[i].data) {
+                *count = 0;
+                return NULL;
+            }
+            
+            p = found + delimiter_len;
+        } else {
+            /* Last part */
+            result[i] = myrtx_string_from_cstr(arena, p);
+            if (!result[i].data) {
+                *count = 0;
+                return NULL;
+            }
+            
+            break;
+        }
     }
     
-    /* Extract the last part */
-    result[part] = myrtx_string_substr(arena, str, start, str->length - start);
-    if (!result[part].data) {
-        *count = 0;
-        return NULL;
-    }
-    
-    *count = parts;
+    *count = part_count;
     return result;
 }
 
@@ -717,430 +742,6 @@ myrtx_string_t myrtx_string_join(myrtx_arena_t* arena, const myrtx_string_t* str
             }
         }
     }
-    
-    return result;
-}
-
-/* Legacy C string functions - Original implementation remains unchanged */
-
-char* myrtx_strdup(myrtx_arena_t* arena, const char* str) {
-    if (!arena || !str) {
-        return NULL;
-    }
-    
-    size_t len = strlen(str) + 1; /* +1 for null terminator */
-    char* result = (char*)myrtx_arena_alloc(arena, len);
-    if (!result) {
-        return NULL;
-    }
-    
-    memcpy(result, str, len);
-    return result;
-}
-
-char* myrtx_strndup(myrtx_arena_t* arena, const char* str, size_t n) {
-    if (!arena || !str) {
-        return NULL;
-    }
-    
-    size_t len = strlen(str);
-    if (len > n) {
-        len = n;
-    }
-    
-    char* result = (char*)myrtx_arena_alloc(arena, len + 1); /* +1 for null terminator */
-    if (!result) {
-        return NULL;
-    }
-    
-    memcpy(result, str, len);
-    result[len] = '\0'; /* Ensure null termination */
-    
-    return result;
-}
-
-char* myrtx_strfmt(myrtx_arena_t* arena, const char* format, ...) {
-    if (!arena || !format) {
-        return NULL;
-    }
-    
-    /* First pass: determine the required buffer size */
-    va_list args;
-    va_start(args, format);
-    int size = vsnprintf(NULL, 0, format, args);
-    va_end(args);
-    
-    if (size < 0) {
-        return NULL; /* Format error */
-    }
-    
-    /* Allocate buffer (add 1 for null terminator) */
-    char* result = (char*)myrtx_arena_alloc(arena, (size_t)size + 1);
-    if (!result) {
-        return NULL;
-    }
-    
-    /* Second pass: format the string into the buffer */
-    va_start(args, format);
-    vsnprintf(result, (size_t)size + 1, format, args);
-    va_end(args);
-    
-    return result;
-}
-
-char* myrtx_strcat_dup(myrtx_arena_t* arena, const char* str1, const char* str2) {
-    if (!arena || !str1 || !str2) {
-        return NULL;
-    }
-    
-    size_t len1 = strlen(str1);
-    size_t len2 = strlen(str2);
-    size_t total_len = len1 + len2 + 1; /* +1 for null terminator */
-    
-    char* result = (char*)myrtx_arena_alloc(arena, total_len);
-    if (!result) {
-        return NULL;
-    }
-    
-    memcpy(result, str1, len1);
-    memcpy(result + len1, str2, len2 + 1); /* +1 to include null terminator */
-    
-    return result;
-}
-
-char** myrtx_strsplit(myrtx_arena_t* arena, const char* str, const char* delimiters, size_t* count) {
-    if (!arena || !str || !delimiters || !count) {
-        return NULL;
-    }
-    
-    /* First count how many tokens we'll have */
-    size_t token_count = 1; /* Start with 1 token (there's at least one token if string is not empty) */
-    const char* p;
-    
-    /* Count delimiters to determine number of tokens */
-    for (p = str; *p; p++) {
-        if (strchr(delimiters, *p) != NULL) {
-            token_count++;
-        }
-    }
-    
-    /* Handle empty string case */
-    if (*str == '\0') {
-        token_count = 0;
-    }
-    
-    /* Allocate the result array (plus 1 for NULL terminator) */
-    char** result = (char**)myrtx_arena_alloc(arena, (token_count + 1) * sizeof(char*));
-    if (!result) {
-        return NULL;
-    }
-    
-    /* Set the last pointer to NULL for easier iteration */
-    result[token_count] = NULL;
-    
-    /* Handle empty string case */
-    if (token_count == 0) {
-        *count = 0;
-        return result;
-    }
-    
-    /* Actually split the string */
-    p = str;
-    size_t i = 0;
-    
-    const char* token_start = p;
-    
-    for (;;) {
-        if (*p == '\0' || strchr(delimiters, *p) != NULL) {
-            /* Found a delimiter or end of string, extract the token */
-            size_t token_length = p - token_start;
-            
-            /* Allocate memory for the token */
-            result[i] = (char*)myrtx_arena_alloc(arena, token_length + 1);
-            if (!result[i]) {
-                *count = 0;
-                return NULL;
-            }
-            
-            /* Copy token and null-terminate it */
-            if (token_length > 0) {
-                memcpy(result[i], token_start, token_length);
-            }
-            result[i][token_length] = '\0';
-            i++;
-            
-            /* Exit if we reached the end of the string */
-            if (*p == '\0') {
-                break;
-            }
-            
-            /* Move to next character after delimiter for next token */
-            token_start = p + 1;
-        }
-        
-        p++;
-    }
-    
-    /* In case we had trailing delimiters, adjust the token count */
-    *count = i;
-    return result;
-}
-
-char* myrtx_strjoin(myrtx_arena_t* arena, const char** strings, size_t count, const char* separator) {
-    if (!arena || !strings || !separator) {
-        return NULL;
-    }
-    
-    if (count == 0) {
-        /* Return an empty string */
-        char* result = (char*)myrtx_arena_alloc(arena, 1);
-        if (result) {
-            result[0] = '\0';
-        }
-        return result;
-    }
-    
-    /* Calculate total length */
-    size_t sep_len = strlen(separator);
-    size_t total_len = 0;
-    
-    for (size_t i = 0; i < count; i++) {
-        if (!strings[i]) {
-            return NULL;
-        }
-        
-        total_len += strlen(strings[i]);
-        if (i < count - 1) {
-            total_len += sep_len;
-        }
-    }
-    
-    /* Allocate result buffer with space for null terminator */
-    char* result = (char*)myrtx_arena_alloc(arena, total_len + 1);
-    if (!result) {
-        return NULL;
-    }
-    
-    /* Join strings */
-    char* dst = result;
-    for (size_t i = 0; i < count; i++) {
-        size_t len = strlen(strings[i]);
-        memcpy(dst, strings[i], len);
-        dst += len;
-        
-        if (i < count - 1) {
-            memcpy(dst, separator, sep_len);
-            dst += sep_len;
-        }
-    }
-    
-    /* Null-terminate the result */
-    *dst = '\0';
-    
-    return result;
-}
-
-char* myrtx_substr(myrtx_arena_t* arena, const char* str, size_t start, size_t length) {
-    if (!arena || !str) {
-        return NULL;
-    }
-    
-    size_t str_len = strlen(str);
-    
-    /* Check if start is beyond the end of the string */
-    if (start >= str_len) {
-        char* result = (char*)myrtx_arena_alloc(arena, 1);
-        if (result) {
-            result[0] = '\0';
-        }
-        return result;
-    }
-    
-    /* Adjust length if it would go beyond the end of the string */
-    if (start + length > str_len) {
-        length = str_len - start;
-    }
-    
-    /* Allocate space for the substring plus null terminator */
-    char* result = (char*)myrtx_arena_alloc(arena, length + 1);
-    if (!result) {
-        return NULL;
-    }
-    
-    /* Copy substring */
-    memcpy(result, str + start, length);
-    result[length] = '\0';
-    
-    return result;
-}
-
-char* myrtx_strtoupper(myrtx_arena_t* arena, const char* str) {
-    if (!arena || !str) {
-        return NULL;
-    }
-    
-    size_t len = strlen(str);
-    char* result = (char*)myrtx_arena_alloc(arena, len + 1);
-    if (!result) {
-        return NULL;
-    }
-    
-    /* Convert each character to uppercase */
-    for (size_t i = 0; i < len; i++) {
-        result[i] = (char)toupper((unsigned char)str[i]);
-    }
-    
-    result[len] = '\0';
-    return result;
-}
-
-char* myrtx_strtolower(myrtx_arena_t* arena, const char* str) {
-    if (!arena || !str) {
-        return NULL;
-    }
-    
-    size_t len = strlen(str);
-    char* result = (char*)myrtx_arena_alloc(arena, len + 1);
-    if (!result) {
-        return NULL;
-    }
-    
-    /* Convert each character to lowercase */
-    for (size_t i = 0; i < len; i++) {
-        result[i] = (char)tolower((unsigned char)str[i]);
-    }
-    
-    result[len] = '\0';
-    return result;
-}
-
-bool myrtx_startswith(const char* str, const char* prefix) {
-    if (!str || !prefix) {
-        return false;
-    }
-    
-    size_t prefix_len = strlen(prefix);
-    if (strncmp(str, prefix, prefix_len) == 0) {
-        return true;
-    }
-    
-    return false;
-}
-
-bool myrtx_endswith(const char* str, const char* suffix) {
-    if (!str || !suffix) {
-        return false;
-    }
-    
-    size_t str_len = strlen(str);
-    size_t suffix_len = strlen(suffix);
-    
-    if (suffix_len > str_len) {
-        return false;
-    }
-    
-    return (strcmp(str + (str_len - suffix_len), suffix) == 0);
-}
-
-char* myrtx_strtrim(myrtx_arena_t* arena, const char* str) {
-    if (!arena || !str) {
-        return NULL;
-    }
-    
-    /* Find the first non-whitespace character */
-    const char* start = str;
-    while (*start && isspace((unsigned char)*start)) {
-        start++;
-    }
-    
-    /* If we reached the end, the string is all whitespace */
-    if (*start == '\0') {
-        char* result = (char*)myrtx_arena_alloc(arena, 1);
-        if (result) {
-            result[0] = '\0';
-        }
-        return result;
-    }
-    
-    /* Find the last non-whitespace character */
-    const char* end = str + strlen(str) - 1;
-    while (end > start && isspace((unsigned char)*end)) {
-        end--;
-    }
-    
-    /* Calculate length of trimmed string */
-    size_t length = end - start + 1;
-    
-    /* Allocate and copy the trimmed string */
-    char* result = (char*)myrtx_arena_alloc(arena, length + 1);
-    if (!result) {
-        return NULL;
-    }
-    
-    memcpy(result, start, length);
-    result[length] = '\0';
-    
-    return result;
-}
-
-char* myrtx_strreplace(myrtx_arena_t* arena, const char* str, const char* old_str, const char* new_str) {
-    if (!arena || !str || !old_str || !new_str) {
-        return NULL;
-    }
-    
-    size_t old_len = strlen(old_str);
-    if (old_len == 0) {
-        /* Cannot replace an empty string */
-        return myrtx_strdup(arena, str);
-    }
-    
-    size_t new_len = strlen(new_str);
-    
-    /* Count occurrences of old_str in str */
-    size_t count = 0;
-    const char* p = str;
-    
-    while ((p = strstr(p, old_str)) != NULL) {
-        count++;
-        p += old_len;
-    }
-    
-    if (count == 0) {
-        /* No replacements needed */
-        return myrtx_strdup(arena, str);
-    }
-    
-    /* Calculate the new string length */
-    size_t str_len = strlen(str);
-    size_t result_len = str_len + (new_len - old_len) * count;
-    
-    /* Allocate memory for the result */
-    char* result = (char*)myrtx_arena_alloc(arena, result_len + 1);
-    if (!result) {
-        return NULL;
-    }
-    
-    /* Perform replacement */
-    char* dst = result;
-    const char* src = str;
-    const char* match;
-    
-    while ((match = strstr(src, old_str)) != NULL) {
-        /* Copy everything up to the match */
-        size_t len = match - src;
-        memcpy(dst, src, len);
-        dst += len;
-        
-        /* Copy the replacement */
-        memcpy(dst, new_str, new_len);
-        dst += new_len;
-        
-        /* Move past the match in the source */
-        src = match + old_len;
-    }
-    
-    /* Copy the remainder of the source string */
-    strcpy(dst, src);
     
     return result;
 } 

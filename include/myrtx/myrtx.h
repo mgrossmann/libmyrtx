@@ -1,6 +1,8 @@
 /**
  * @file myrtx.h
- * @brief Main header for the myrtx library (MY Runtime eXtension)
+ * @brief Main include file for the myrtx library
+ *
+ * This file includes all the necessary headers for using the myrtx library.
  */
 
 #ifndef MYRTX_H
@@ -9,5 +11,6 @@
 #include "myrtx/version.h"
 #include "myrtx/memory/arena_allocator.h"
 #include "myrtx/context/context.h"
+#include "myrtx/string/string.h"
 
 #endif /* MYRTX_H */ 

@@ -16,6 +16,7 @@ option(MYRTX_BUILD_EXAMPLES "Build example programs" ON)
 set(MYRTX_SOURCES
     src/memory/arena_allocator.c
     src/context/context.c
+    src/string/string.c
 )
 
 # Create library
