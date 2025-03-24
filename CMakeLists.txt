@@ -12,15 +12,12 @@ option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(MYRTX_BUILD_TESTS "Build test programs" ON)
 option(MYRTX_BUILD_EXAMPLES "Build example programs" ON)
 
-# Library sources
-set(MYRTX_SOURCES
-    src/memory/arena_allocator.c
-    src/context/context.c
-    src/string/string.c
-)
-
 # Create library
-add_library(myrtx ${MYRTX_SOURCES})
+add_library(myrtx "")
+
+# Include source directories
+add_subdirectory(src)
+
 target_include_directories(myrtx
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
