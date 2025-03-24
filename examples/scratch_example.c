@@ -172,12 +172,19 @@ int main(void) {
     const int item_count = 1000000;
     
     process_data_manual(&arena, item_count);
+    myrtx_arena_reset(&arena); // Reset after each example
+    
     process_data_with_macro(&arena, item_count);
+    myrtx_arena_reset(&arena);
     
     nested_scratch_example(&arena);
+    myrtx_arena_reset(&arena);
     
     early_return_example(&arena, 0); // Without early return
+    myrtx_arena_reset(&arena);
+    
     early_return_example(&arena, 1); // With early return
+    myrtx_arena_reset(&arena);
     
     // Free the arena
     myrtx_arena_free(&arena);

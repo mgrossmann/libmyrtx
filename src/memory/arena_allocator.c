@@ -29,6 +29,9 @@ static myrtx_arena_block_t* arena_add_block(myrtx_arena_t* arena, size_t min_siz
         return NULL;
     }
     
+    /* Initialize block to zero first */
+    memset(block, 0, sizeof(myrtx_arena_block_t));
+    
     block->base = (uint8_t*)malloc(block_size);
     if (!block->base) {
         free(block);
@@ -88,7 +91,10 @@ void myrtx_arena_free(myrtx_arena_t* arena) {
     myrtx_arena_block_t* block = arena->first;
     while (block) {
         myrtx_arena_block_t* next = block->next;
-        free(block->base);
+        if (block->base) {
+            free(block->base);
+            block->base = NULL;
+        }
         free(block);
         block = next;
     }
@@ -149,15 +155,29 @@ void myrtx_arena_reset(myrtx_arena_t* arena) {
     /* Reset all temporary markers */
     arena->temp_count = 0;
     
-    /* Reset used bytes in each block */
-    myrtx_arena_block_t* block = arena->first;
-    while (block) {
-        block->used = 0;
-        block = block->next;
+    /* Keep the first block but free all others */
+    if (arena->first) {
+        myrtx_arena_block_t* to_keep = arena->first;
+        myrtx_arena_block_t* to_free = to_keep->next;
+        
+        /* Reset the first block */
+        to_keep->used = 0;
+        to_keep->next = NULL;
+        
+        /* Free all other blocks */
+        while (to_free) {
+            myrtx_arena_block_t* next = to_free->next;
+            free(to_free->base);
+            free(to_free);
+            to_free = next;
+        }
+        
+        /* Reset the current block to the first block */
+        arena->current = arena->first;
+        
+        /* Update total allocated memory */
+        arena->total_allocated = arena->first->size;
     }
-    
-    /* Reset current block to the first */
-    arena->current = arena->first;
 }
 
 size_t myrtx_arena_temp_begin(myrtx_arena_t* arena) {
@@ -203,6 +223,7 @@ void myrtx_arena_temp_end(myrtx_arena_t* arena, size_t marker) {
     /* Reset arena to marked state */
     myrtx_arena_block_t* block = arena->first;
     size_t remaining = total_used;
+    myrtx_arena_block_t* last_valid_block = NULL;
     
     while (block && remaining > 0) {
         if (remaining > block->size) {
@@ -213,14 +234,21 @@ void myrtx_arena_temp_end(myrtx_arena_t* arena, size_t marker) {
             remaining = 0;
         }
         
-        /* Reset the following blocks */
-        myrtx_arena_block_t* next = block->next;
-        while (next) {
-            next->used = 0;
-            next = next->next;
-        }
-        
+        last_valid_block = block;
         block = block->next;
+    }
+    
+    /* Free any blocks that were allocated after the marker was set */
+    if (last_valid_block) {
+        myrtx_arena_block_t* to_free = last_valid_block->next;
+        last_valid_block->next = NULL;
+        
+        while (to_free) {
+            myrtx_arena_block_t* next = to_free->next;
+            free(to_free->base);
+            free(to_free);
+            to_free = next;
+        }
     }
     
     /* Restore current block */
