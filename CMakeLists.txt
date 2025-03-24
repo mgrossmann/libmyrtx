@@ -7,17 +7,18 @@ project(myrtx
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# Optionen
+# Options
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(MYRTX_BUILD_TESTS "Build test programs" ON)
 option(MYRTX_BUILD_EXAMPLES "Build example programs" ON)
 
-# Bibliotheksquellen
+# Library sources
 set(MYRTX_SOURCES
     src/memory/arena_allocator.c
+    src/context/context.c
 )
 
-# Bibliothek erstellen
+# Create library
 add_library(myrtx ${MYRTX_SOURCES})
 target_include_directories(myrtx
     PUBLIC
@@ -27,14 +28,14 @@ target_include_directories(myrtx
         ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
-# Version in Header-Datei definieren
+# Define version in header file
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/include/myrtx/version.h.in
     ${CMAKE_CURRENT_SOURCE_DIR}/include/myrtx/version.h
     @ONLY
 )
 
-# Installation konfigurieren
+# Configure installation
 include(GNUInstallDirs)
 install(TARGETS myrtx
     EXPORT myrtxTargets
@@ -48,7 +49,7 @@ install(DIRECTORY include/
     FILES_MATCHING PATTERN "*.h"
 )
 
-# Beispiele
+# Examples
 if(MYRTX_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()

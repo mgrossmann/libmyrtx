@@ -8,5 +8,6 @@
 
 #include "myrtx/version.h"
 #include "myrtx/memory/arena_allocator.h"
+#include "myrtx/context/context.h"
 
 #endif /* MYRTX_H */ 

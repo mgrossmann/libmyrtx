@@ -33,6 +33,21 @@ extern "C" {
 #define MYRTX_ARENA_DEFAULT_SIZE (1024 * 1024) /* 1 MB */
 
 /**
+ * @brief Convenience macro for creating and using a scratch arena
+ * 
+ * This macro creates a scratch arena from a parent arena and automatically
+ * cleans it up when the code block exits. Use it to create a temporary
+ * memory region for short-lived allocations.
+ * 
+ * @param parent_arena Pointer to the parent arena
+ * @param scratch_name Name to use for the scratch arena variable
+ */
+#define MYRTX_WITH_SCRATCH(parent_arena, scratch_name) \
+    myrtx_scratch_arena_t scratch_name = {0}; \
+    if (myrtx_scratch_begin(&scratch_name, parent_arena)) \
+    for (int _once = 1; _once; _once = 0, myrtx_scratch_end(&scratch_name))
+
+/**
  * @brief Structure representing a single memory block in an arena
  */
 typedef struct myrtx_arena_block {
