@@ -1,10 +1,10 @@
 Collections API
-=============
+==============
 
 The collections module provides data structures for storing and accessing data efficiently.
 
 AVL Tree
--------
+--------
 
 The AVL Tree is a self-balancing binary search tree with O(log n) complexity for insertion, deletion, and search operations.
 
@@ -44,7 +44,7 @@ Types
       typedef bool (*myrtx_avl_visit_function)(const void* key, void* value, void* user_data);
 
 Creation and Destruction
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. c:function:: myrtx_avl_tree_t* myrtx_avl_tree_create(myrtx_arena_t* arena, myrtx_avl_compare_function compare_function, void* user_data)
 
@@ -64,7 +64,7 @@ Creation and Destruction
    :param user_data: User-defined data for the free function
 
 Insertion and Removal
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 .. c:function:: bool myrtx_avl_tree_insert(myrtx_avl_tree_t* tree, void* key, void* value, void** existing_value)
 
@@ -87,7 +87,7 @@ Insertion and Removal
    :return: true if the key was found and removed, false otherwise
 
 Lookup Functions
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
 
 .. c:function:: bool myrtx_avl_tree_find(const myrtx_avl_tree_t* tree, const void* key, void** value_out)
 
@@ -107,7 +107,7 @@ Lookup Functions
    :return: true if the key was found, false otherwise
 
 Traversal Functions
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 .. c:function:: void myrtx_avl_tree_traverse_inorder(const myrtx_avl_tree_t* tree, myrtx_avl_visit_function visit_function, void* user_data)
 
@@ -134,7 +134,7 @@ Traversal Functions
    :param user_data: User-defined data for the visit function
 
 Utility Functions
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
 
 .. c:function:: size_t myrtx_avl_tree_size(const myrtx_avl_tree_t* tree)
 
@@ -158,7 +158,7 @@ Utility Functions
    :return: Height of the tree (0 for empty tree)
 
 Min/Max Functions
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
 
 .. c:function:: bool myrtx_avl_tree_min(const myrtx_avl_tree_t* tree, void** key_out, void** value_out)
 
@@ -179,7 +179,7 @@ Min/Max Functions
    :return: true if the tree is not empty, false otherwise
 
 Predefined Comparison Functions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. c:function:: int myrtx_avl_compare_strings(const void* key1, const void* key2, void* user_data)
 

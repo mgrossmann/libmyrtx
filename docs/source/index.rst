@@ -1,9 +1,11 @@
 Welcome to libmyrtx's documentation!
 ================================
 
-.. image:: https://readthedocs.org/projects/libmyrtx/badge/?version=latest
-   :target: https://libmyrtx.readthedocs.io/en/latest/?badge=latest
-   :alt: Documentation Status
+.. only:: html
+
+   .. image:: https://readthedocs.org/projects/libmyrtx/badge/?version=latest
+      :target: https://libmyrtx.readthedocs.io/en/latest/?badge=latest
+      :alt: Documentation Status
 
 libmyrtx is a C99 library that provides useful functions and data structures for use in various C projects.
 The library focuses on memory allocators, strings, and other fundamental data structures.

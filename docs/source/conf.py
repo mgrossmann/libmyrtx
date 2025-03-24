@@ -60,7 +60,7 @@ html_theme_options = {
 # -- Breathe configuration -------------------------------------------------
 
 breathe_projects = {
-    "libmyrtx": "_build/xml/"
+    "libmyrtx": "../doxygen_output/xml/"
 }
 breathe_default_project = "libmyrtx"
 breathe_default_members = ('members', 'undoc-members') 

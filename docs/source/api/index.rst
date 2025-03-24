@@ -1,16 +1,15 @@
 API Reference
-============
+=============
 
-This section provides detailed documentation for all the functions, types, and modules in the libmyrtx library.
+This section provides detailed reference for the libmyrtx API.
 
 .. toctree::
    :maxdepth: 2
-   :caption: API Modules:
 
    memory
+   collections
    context
    string
-   collections
 
 Memory Management
 ---------------

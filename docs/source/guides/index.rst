@@ -1,64 +1,37 @@
 User Guides
 ===========
 
-This section contains detailed guides on how to use various features of the libmyrtx library.
+This section provides detailed guides on using different components of the libmyrtx library.
 
 .. toctree::
    :maxdepth: 2
    :caption: Available Guides:
 
-   memory
+   arena_allocator
    context
    string
    hash_table
    avl_tree
 
-Arena Allocator Guide
-------------------
+Guide Descriptions
+-----------------
 
-.. toctree::
-   :maxdepth: 1
-
-   memory
+**Arena Allocator Guide**
 
 Learn how to use the arena allocator efficiently for different memory management patterns.
 
-Context System Guide
-----------------
-
-.. toctree::
-   :maxdepth: 1
-
-   context
+**Context System Guide**
 
 Understand how to use the context system for state management and error handling.
 
-String Manipulation Guide
----------------------
-
-.. toctree::
-   :maxdepth: 1
-
-   string
+**String Utility Guide**
 
 Explore the string utilities and dynamic string type for efficient text processing.
 
-Hash Table Guide
-------------
-
-.. toctree::
-   :maxdepth: 1
-
-   hash_table
+**Hash Table Guide**
 
 Learn how to use hash tables for efficient key-value storage and retrieval.
 
-AVL Tree Guide
------------
-
-.. toctree::
-   :maxdepth: 1
-
-   avl_tree
+**AVL Tree Guide**
 
 Understand how to work with AVL trees for ordered key-value storage with fast operations. 
