@@ -12,5 +12,6 @@
 #include "myrtx/memory/arena_allocator.h"
 #include "myrtx/context/context.h"
 #include "myrtx/string/string.h"
+#include "myrtx/collections/hash_table.h"
 
 #endif /* MYRTX_H */ 
