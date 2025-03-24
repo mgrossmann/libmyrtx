@@ -1,10 +1,10 @@
 #!/bin/bash
-# build.sh - Build-Skript für das libmyrtx-Projekt
+# build.sh - Build script for the libmyrtx project
 # 
-# Dieses Skript automatisiert den Build-Prozess für die libmyrtx-Bibliothek
-# mit verschiedenen Konfigurationsoptionen.
+# This script automates the build process for the libmyrtx library
+# with various configuration options.
 
-set -e # Bei Fehlern abbrechen
+set -e # Exit on error
 
 BUILD_TYPE="Debug"
 RUN_TESTS=0
@@ -14,23 +14,23 @@ INSTALL=0
 INSTALL_PREFIX="/usr/local"
 BUILD_DIR="build"
 
-# Hilfe-Funktion
+# Help function
 show_help() {
-    echo "Verwendung: $0 [Optionen]"
+    echo "Usage: $0 [options]"
     echo
-    echo "Optionen:"
-    echo "  -h, --help               Zeigt diese Hilfe an"
-    echo "  -t, --type TYPE          Setzt den Build-Typ (Debug oder Release) [Standard: Debug]"
-    echo "  -c, --clean              Bereinigt das Build-Verzeichnis vor dem Bauen"
-    echo "  --test                   Führt Tests nach dem Bauen aus"
-    echo "  --no-examples            Baut keine Beispiele"
-    echo "  -i, --install            Installiert die Bibliothek nach dem Bauen"
-    echo "  --prefix PATH            Setzt den Installationspfad [Standard: /usr/local]"
-    echo "  --build-dir DIR          Setzt das Build-Verzeichnis [Standard: build]"
+    echo "Options:"
+    echo "  -h, --help               Show this help message"
+    echo "  -t, --type TYPE          Set build type (Debug or Release) [default: Debug]"
+    echo "  -c, --clean              Clean the build directory before building"
+    echo "  --test                   Run tests after building"
+    echo "  --no-examples            Don't build examples"
+    echo "  -i, --install            Install the library after building"
+    echo "  --prefix PATH            Set installation path [default: /usr/local]"
+    echo "  --build-dir DIR          Set build directory [default: build]"
     echo
 }
 
-# Parameter verarbeiten
+# Process parameters
 while [[ $# -gt 0 ]]; do
     case $1 in
         -h|--help)
@@ -66,68 +66,68 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         *)
-            echo "Unbekannte Option: $1"
+            echo "Unknown option: $1"
             show_help
             exit 1
             ;;
     esac
 done
 
-# Build-Typ überprüfen
+# Check build type
 if [[ "$BUILD_TYPE" != "Debug" && "$BUILD_TYPE" != "Release" ]]; then
-    echo "Ungültiger Build-Typ: $BUILD_TYPE. Gültige Werte sind 'Debug' oder 'Release'."
+    echo "Invalid build type: $BUILD_TYPE. Valid values are 'Debug' or 'Release'."
     exit 1
 fi
 
-# Build-Verzeichnis erstellen, wenn es noch nicht existiert
+# Create build directory if it doesn't exist
 if [ ! -d "$BUILD_DIR" ]; then
     mkdir -p "$BUILD_DIR"
 fi
 
-# Build-Verzeichnis bereinigen, wenn angefordert
+# Clean build directory if requested
 if [ $CLEAN -eq 1 ]; then
-    echo "Bereinige Build-Verzeichnis..."
+    echo "Cleaning build directory..."
     rm -rf "$BUILD_DIR"/*
 fi
 
-# Ins Build-Verzeichnis wechseln
+# Change to build directory
 cd "$BUILD_DIR"
 
-# CMake-Konfiguration
-echo "Konfiguriere CMake für $BUILD_TYPE-Build..."
+# CMake configuration
+echo "Configuring CMake for $BUILD_TYPE build..."
 CMAKE_ARGS="-DCMAKE_BUILD_TYPE=$BUILD_TYPE"
 
 if [ $BUILD_EXAMPLES -eq 0 ]; then
     CMAKE_ARGS="$CMAKE_ARGS -DMYRTX_BUILD_EXAMPLES=OFF"
 fi
 
-# Setze den Installationspfad, wenn die Installation aktiviert ist
+# Set installation path if installation is enabled
 if [ $INSTALL -eq 1 ]; then
     CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX"
 fi
 
 cmake $CMAKE_ARGS ..
 
-# Build durchführen
-echo "Baue libmyrtx..."
+# Perform build
+echo "Building libmyrtx..."
 cmake --build . -- -j$(nproc)
 
-# Tests ausführen, wenn angefordert
+# Run tests if requested
 if [ $RUN_TESTS -eq 1 ]; then
-    echo "Führe Tests aus..."
+    echo "Running tests..."
     ctest --output-on-failure
 fi
 
-# Installieren, wenn angefordert
+# Install if requested
 if [ $INSTALL -eq 1 ]; then
-    echo "Installiere libmyrtx in $INSTALL_PREFIX..."
+    echo "Installing libmyrtx to $INSTALL_PREFIX..."
     cmake --install .
 fi
 
-echo "Build abgeschlossen!"
+echo "Build completed!"
 
 if [ $BUILD_EXAMPLES -eq 1 ]; then
-    echo "Beispielprogramme befinden sich in $BUILD_DIR/examples/"
+    echo "Example programs are located in $BUILD_DIR/examples/"
 fi
 
 cd .. 
