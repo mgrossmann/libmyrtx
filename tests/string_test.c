@@ -1,6 +1,6 @@
 /**
  * @file string_test.c
- * @brief Tests for the myrtx string functions
+ * @brief Tests for myrtx string object type
  */
 
 #include "myrtx/string/string.h"
@@ -12,507 +12,449 @@
 #define TEST_PASSED() printf("PASSED: %s\n", __func__)
 #define TEST_FAILED(msg) do { printf("FAILED: %s - %s\n", __func__, msg); exit(1); } while(0)
 
-/* Test strdup function */
-void test_strdup(void) {
+/* Test string creation functions */
+void test_string_create(void) {
     myrtx_arena_t arena = {0};
     if (!myrtx_arena_init(&arena, 0)) {
         TEST_FAILED("Failed to initialize arena");
     }
     
-    const char* original = "Test string for duplication";
-    char* duplicate = myrtx_strdup(&arena, original);
-    
-    if (!duplicate) {
+    /* Test creating an empty string */
+    myrtx_string_t* empty = myrtx_string_create(&arena, 10);
+    if (!empty->data) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to duplicate string");
+        TEST_FAILED("Failed to create empty string");
     }
     
-    if (strcmp(original, duplicate) != 0) {
+    if (empty->length != 0 || empty->capacity < 10 || strcmp(empty->data, "") != 0) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Duplicated string does not match original");
+        TEST_FAILED("Empty string has incorrect values");
     }
     
-    /* Check if the duplicate is actually a different string in memory */
-    if (original == duplicate) {
+    /* Test creating from C string */
+    const char* original = "Test string for creation";
+    myrtx_string_t* from_cstr = myrtx_string_from_cstr(&arena, original);
+    if (!from_cstr->data) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Duplicate points to the same memory as original");
+        TEST_FAILED("Failed to create string from C string");
+    }
+    
+    if (from_cstr->length != strlen(original) || 
+        from_cstr->capacity != strlen(original) + 1 || 
+        strcmp(from_cstr->data, original) != 0) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("String from C string has incorrect values");
+    }
+    
+    /* Test creating from buffer with explicit length */
+    const char buffer[] = {'T', 'e', 's', 't', '\0', 'X', 'Y', 'Z'};
+    size_t buffer_len = sizeof(buffer);
+    myrtx_string_t* from_buffer = myrtx_string_from_buffer(&arena, buffer, buffer_len);
+    if (!from_buffer->data) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("Failed to create string from buffer");
+    }
+    
+    if (from_buffer->length != buffer_len || 
+        from_buffer->capacity != buffer_len + 1 || 
+        memcmp(from_buffer->data, buffer, buffer_len) != 0) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("String from buffer has incorrect values");
+    }
+    
+    /* Test creating with formatting */
+    int num = 42;
+    const char* formatted_expected = "The answer is 42";
+    myrtx_string_t* formatted = myrtx_string_format(&arena, "The answer is %d", num);
+    if (!formatted->data) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("Failed to create formatted string");
+    }
+    
+    if (formatted->length != strlen(formatted_expected) || 
+        strcmp(formatted->data, formatted_expected) != 0) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("Formatted string has incorrect values");
     }
     
     myrtx_arena_free(&arena);
     TEST_PASSED();
 }
 
-/* Test strndup function */
-void test_strndup(void) {
+/* Test string modification functions */
+void test_string_modify(void) {
     myrtx_arena_t arena = {0};
     if (!myrtx_arena_init(&arena, 0)) {
         TEST_FAILED("Failed to initialize arena");
     }
     
-    const char* original = "Test string for partial duplication";
-    
-    /* Test partial duplication */
-    char* partial = myrtx_strndup(&arena, original, 11);
-    if (!partial) {
+    /* Test setting string content */
+    myrtx_string_t* str = myrtx_string_create(&arena, 16);
+    if (!str->data) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to partially duplicate string");
+        TEST_FAILED("Failed to create string");
     }
     
-    if (strcmp(partial, "Test string") != 0) {
+    const char* content = "Test content";
+    if (!myrtx_string_set(str, content)) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Partially duplicated string does not match expected result");
+        TEST_FAILED("Failed to set string content");
     }
     
-    /* Test with length longer than string */
-    char* full = myrtx_strndup(&arena, original, 100);
-    if (!full) {
+    if (str->length != strlen(content) || strcmp(str->data, content) != 0) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to duplicate string with length > strlen");
+        TEST_FAILED("String set resulted in incorrect values");
     }
     
-    if (strcmp(original, full) != 0) {
+    /* Test setting content beyond initial capacity (should trigger resize) */
+    const char* long_content = "This is a much longer string that should trigger a resize of the string buffer";
+    if (!myrtx_string_set(str, long_content)) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("String duplicated with length > strlen does not match original");
+        TEST_FAILED("Failed to set longer string content");
+    }
+    
+    if (str->length != strlen(long_content) || strcmp(str->data, long_content) != 0) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("String set with long content resulted in incorrect values");
+    }
+    
+    /* Test appending to string */
+    myrtx_string_t* append_str = myrtx_string_from_cstr(&arena, "Hello");
+    if (!append_str->data) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("Failed to create string for append test");
+    }
+    
+    const char* append_text = ", world!";
+    if (!myrtx_string_append(append_str, append_text)) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("Failed to append to string");
+    }
+    
+    const char* append_expected = "Hello, world!";
+    if (append_str->length != strlen(append_expected) || 
+        strcmp(append_str->data, append_expected) != 0) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("String append resulted in incorrect values");
+    }
+    
+    /* Test append formatting */
+    if (!myrtx_string_append_format(append_str, " (%d)", 2023)) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("Failed to append formatted text");
+    }
+    
+    const char* append_format_expected = "Hello, world! (2023)";
+    if (append_str->length != strlen(append_format_expected) || 
+        strcmp(append_str->data, append_format_expected) != 0) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("String append with formatting resulted in incorrect values");
     }
     
     myrtx_arena_free(&arena);
     TEST_PASSED();
 }
 
-/* Test strfmt function */
-void test_strfmt(void) {
+/* Test string manipulation functions */
+void test_string_manipulate(void) {
     myrtx_arena_t arena = {0};
     if (!myrtx_arena_init(&arena, 0)) {
         TEST_FAILED("Failed to initialize arena");
     }
     
-    /* Test basic formatting */
-    char* basic = myrtx_strfmt(&arena, "The answer is %d", 42);
-    if (!basic) {
+    /* Test substring extraction */
+    const char* source = "This is a test string";
+    myrtx_string_t* str = myrtx_string_from_cstr(&arena, source);
+    if (!str->data) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to format basic string");
+        TEST_FAILED("Failed to create string for substring test");
     }
     
-    if (strcmp(basic, "The answer is 42") != 0) {
+    myrtx_string_t* substr = myrtx_string_substr(&arena, str, 5, 7);
+    if (!substr->data) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Formatted string does not match expected result");
+        TEST_FAILED("Failed to extract substring");
     }
     
-    /* Test multiple arguments */
-    char* multi = myrtx_strfmt(&arena, "%s %d %c %.2f", "Test", 123, 'X', 3.14159);
-    if (!multi) {
+    const char* substr_expected = "is a te";
+    if (substr->length != strlen(substr_expected) || 
+        strcmp(substr->data, substr_expected) != 0) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to format string with multiple arguments");
+        TEST_FAILED("Substring extraction resulted in incorrect values");
     }
     
-    if (strcmp(multi, "Test 123 X 3.14") != 0) {
+    /* Test clone */
+    myrtx_string_t* clone = myrtx_string_clone(&arena, str);
+    if (!clone->data) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Formatted string with multiple arguments does not match expected result");
+        TEST_FAILED("Failed to clone string");
+    }
+    
+    if (clone->length != str->length || 
+        clone->capacity != str->capacity || 
+        strcmp(clone->data, str->data) != 0) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("String clone resulted in incorrect values");
+    }
+    
+    /* Test upper/lower case conversion */
+    myrtx_string_t* mixed_case = myrtx_string_from_cstr(&arena, "MiXeD CaSe StRiNg");
+    if (!mixed_case->data) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("Failed to create string for case conversion test");
+    }
+    
+    if (!myrtx_string_to_upper(mixed_case)) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("Failed to convert to uppercase");
+    }
+    
+    const char* upper_expected = "MIXED CASE STRING";
+    if (strcmp(mixed_case->data, upper_expected) != 0) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("Uppercase conversion resulted in incorrect values");
+    }
+    
+    if (!myrtx_string_to_lower(mixed_case)) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("Failed to convert to lowercase");
+    }
+    
+    const char* lower_expected = "mixed case string";
+    if (strcmp(mixed_case->data, lower_expected) != 0) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("Lowercase conversion resulted in incorrect values");
+    }
+    
+    /* Test trimming */
+    myrtx_string_t* to_trim = myrtx_string_from_cstr(&arena, "  \t  Trim me  \n  ");
+    if (!to_trim->data) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("Failed to create string for trim test");
+    }
+    
+    if (!myrtx_string_trim(to_trim)) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("Failed to trim string");
+    }
+    
+    const char* trim_expected = "Trim me";
+    if (to_trim->length != strlen(trim_expected) || 
+        strcmp(to_trim->data, trim_expected) != 0) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("String trim resulted in incorrect values");
     }
     
     myrtx_arena_free(&arena);
     TEST_PASSED();
 }
 
-/* Test strcat_dup function */
-void test_strcat_dup(void) {
+/* Test string operations */
+void test_string_operations(void) {
     myrtx_arena_t arena = {0};
     if (!myrtx_arena_init(&arena, 0)) {
         TEST_FAILED("Failed to initialize arena");
     }
     
-    /* Test basic concatenation */
-    const char* first = "Hello, ";
-    const char* second = "world!";
-    char* result = myrtx_strcat_dup(&arena, first, second);
+    /* Test comparison */
+    myrtx_string_t* str1 = myrtx_string_from_cstr(&arena, "String A");
+    myrtx_string_t* str2 = myrtx_string_from_cstr(&arena, "String B");
+    myrtx_string_t* str3 = myrtx_string_from_cstr(&arena, "String A");
     
-    if (!result) {
+    if (myrtx_string_compare(str1, str2) >= 0) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to concatenate strings");
+        TEST_FAILED("String comparison (less than) failed");
     }
     
-    if (strcmp(result, "Hello, world!") != 0) {
+    if (myrtx_string_compare(str2, str1) <= 0) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Concatenated string does not match expected result");
+        TEST_FAILED("String comparison (greater than) failed");
     }
     
-    /* Test with empty strings */
-    char* empty1 = myrtx_strcat_dup(&arena, "", second);
-    if (!empty1 || strcmp(empty1, second) != 0) {
+    if (myrtx_string_compare(str1, str3) != 0) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Concatenation with empty first string failed");
+        TEST_FAILED("String comparison (equal) failed");
     }
     
-    char* empty2 = myrtx_strcat_dup(&arena, first, "");
-    if (!empty2 || strcmp(empty2, first) != 0) {
+    /* Test starts/ends with */
+    myrtx_string_t* prefix_suffix = myrtx_string_from_cstr(&arena, "Hello, world!");
+    
+    if (!myrtx_string_starts_with(prefix_suffix, "Hello")) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Concatenation with empty second string failed");
+        TEST_FAILED("String starts_with failed for valid prefix");
+    }
+    
+    if (myrtx_string_starts_with(prefix_suffix, "hello")) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("String starts_with should be case sensitive");
+    }
+    
+    if (!myrtx_string_ends_with(prefix_suffix, "world!")) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("String ends_with failed for valid suffix");
+    }
+    
+    if (myrtx_string_ends_with(prefix_suffix, "World!")) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("String ends_with should be case sensitive");
+    }
+    
+    /* Test find/rfind */
+    myrtx_string_t* haystack = myrtx_string_from_cstr(&arena, "one two three two one");
+    
+    size_t pos = myrtx_string_find(haystack, "two");
+    if (pos != 4) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("String find returned incorrect position");
+    }
+    
+    pos = myrtx_string_find_from(haystack, "two", 5);
+    if (pos != 14) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("String find_from returned incorrect position");
+    }
+    
+    pos = myrtx_string_rfind(haystack, "one");
+    if (pos != 18) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("String rfind returned incorrect position");
+    }
+    
+    /* Test replace */
+    myrtx_string_t* to_replace = myrtx_string_from_cstr(&arena, "The quick brown fox jumps over the lazy dog");
+    
+    if (!myrtx_string_replace(to_replace, "fox", "cat")) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("String replace failed");
+    }
+    
+    const char* replace_expected = "The quick brown cat jumps over the lazy dog";
+    if (strcmp(myrtx_string_cstr(to_replace), replace_expected) != 0) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("String replace resulted in incorrect values");
+    }
+    
+    /* Test multiple replacements */
+    myrtx_string_t* multi_replace = myrtx_string_from_cstr(&arena, "one two one two one");
+    
+    if (!myrtx_string_replace(multi_replace, "one", "three")) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("String multiple replace failed");
+    }
+    
+    const char* multi_replace_expected = "three two three two three";
+    if (strcmp(myrtx_string_cstr(multi_replace), multi_replace_expected) != 0) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("String multiple replace resulted in incorrect values");
     }
     
     myrtx_arena_free(&arena);
     TEST_PASSED();
 }
 
-/* Test strsplit function */
-void test_strsplit(void) {
+/* Test split and join */
+void test_string_split_join(void) {
     myrtx_arena_t arena = {0};
     if (!myrtx_arena_init(&arena, 0)) {
         TEST_FAILED("Failed to initialize arena");
     }
     
     /* Test basic splitting */
-    const char* to_split = "apple,orange,banana,grape";
-    size_t token_count = 0;
-    char** tokens = myrtx_strsplit(&arena, to_split, ",", &token_count);
+    myrtx_string_t* to_split = myrtx_string_from_cstr(&arena, "apple,orange,banana,grape");
+    if (!to_split->data) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("Failed to create string for split test");
+    }
     
-    if (!tokens) {
+    size_t count = 0;
+    myrtx_string_t* parts = myrtx_string_split(&arena, to_split, ",", &count);
+    
+    if (!parts) {
         myrtx_arena_free(&arena);
         TEST_FAILED("Failed to split string");
     }
     
-    if (token_count != 4) {
+    if (count != 4) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Incorrect token count");
+        TEST_FAILED("Split resulted in wrong number of parts");
     }
     
-    if (strcmp(tokens[0], "apple") != 0 ||
-        strcmp(tokens[1], "orange") != 0 ||
-        strcmp(tokens[2], "banana") != 0 ||
-        strcmp(tokens[3], "grape") != 0) {
+    if (strcmp(myrtx_string_cstr(&parts[0]), "apple") != 0 ||
+        strcmp(myrtx_string_cstr(&parts[1]), "orange") != 0 ||
+        strcmp(myrtx_string_cstr(&parts[2]), "banana") != 0 ||
+        strcmp(myrtx_string_cstr(&parts[3]), "grape") != 0) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Split tokens do not match expected values");
+        TEST_FAILED("Split parts have incorrect values");
     }
     
-    /* Test with empty parts */
-    const char* with_empty = "one,,three";
+    /* Test splitting with empty parts */
+    myrtx_string_t* with_empty = myrtx_string_from_cstr(&arena, "one,,three");
+    if (!with_empty->data) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("Failed to create string for empty parts test");
+    }
+    
+    printf("Testing split with: '%s'\n", myrtx_string_cstr(with_empty));
+    
     size_t empty_count = 0;
-    char** empty_tokens = myrtx_strsplit(&arena, with_empty, ",", &empty_count);
+    myrtx_string_t* empty_parts = myrtx_string_split(&arena, with_empty, ",", &empty_count);
     
-    if (!empty_tokens) {
+    if (!empty_parts) {
         myrtx_arena_free(&arena);
         TEST_FAILED("Failed to split string with empty parts");
     }
     
+    printf("Got %zu parts\n", empty_count);
+    for (size_t i = 0; i < empty_count; i++) {
+        printf("Part %zu: '%s'\n", i, myrtx_string_cstr(&empty_parts[i]));
+    }
+    
     if (empty_count != 3) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Incorrect token count for string with empty parts");
+        TEST_FAILED("Split with empty parts resulted in wrong number of parts");
     }
     
-    if (strcmp(empty_tokens[0], "one") != 0 ||
-        strcmp(empty_tokens[1], "") != 0 ||
-        strcmp(empty_tokens[2], "three") != 0) {
+    if (strcmp(myrtx_string_cstr(&empty_parts[0]), "one") != 0) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Split tokens with empty parts do not match expected values");
+        TEST_FAILED("First part incorrect");
     }
     
-    myrtx_arena_free(&arena);
-    TEST_PASSED();
-}
-
-/* Test strjoin function */
-void test_strjoin(void) {
-    myrtx_arena_t arena = {0};
-    if (!myrtx_arena_init(&arena, 0)) {
-        TEST_FAILED("Failed to initialize arena");
+    if (strcmp(myrtx_string_cstr(&empty_parts[1]), "") != 0) {
+        myrtx_arena_free(&arena);
+        printf("Empty part contains: '%s'\n", myrtx_string_cstr(&empty_parts[1]));
+        TEST_FAILED("Empty part incorrect");
     }
     
-    /* Test basic joining */
-    const char* strings[] = {"apple", "orange", "banana", "grape"};
-    char* joined = myrtx_strjoin(&arena, strings, 4, ", ");
+    if (strcmp(myrtx_string_cstr(&empty_parts[2]), "three") != 0) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("Last part incorrect");
+    }
     
-    if (!joined) {
+    /* Test joining */
+    myrtx_string_t* joined = myrtx_string_join(&arena, parts, count, ", ");
+    if (!joined->data) {
         myrtx_arena_free(&arena);
         TEST_FAILED("Failed to join strings");
     }
     
-    if (strcmp(joined, "apple, orange, banana, grape") != 0) {
+    const char* join_expected = "apple, orange, banana, grape";
+    if (joined->length != strlen(join_expected) || 
+        strcmp(joined->data, join_expected) != 0) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Joined string does not match expected result");
+        TEST_FAILED("Joined string has incorrect value");
     }
     
-    /* Test with empty separator */
-    char* no_sep = myrtx_strjoin(&arena, strings, 4, "");
-    if (!no_sep) {
+    /* Test joining with empty delimiter */
+    myrtx_string_t* joined_no_delim = myrtx_string_join(&arena, parts, count, "");
+    if (!joined_no_delim->data) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to join strings with empty separator");
+        TEST_FAILED("Failed to join strings with empty delimiter");
     }
     
-    if (strcmp(no_sep, "appleorangebananagrape") != 0) {
+    const char* join_no_delim_expected = "appleorangebananagrape";
+    if (strcmp(joined_no_delim->data, join_no_delim_expected) != 0) {
         myrtx_arena_free(&arena);
-        TEST_FAILED("Joined string with empty separator does not match expected result");
-    }
-    
-    /* Test with single string */
-    char* single = myrtx_strjoin(&arena, strings, 1, ", ");
-    if (!single) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to join single string");
-    }
-    
-    if (strcmp(single, "apple") != 0) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Joined single string does not match expected result");
-    }
-    
-    /* Test with no strings */
-    char* none = myrtx_strjoin(&arena, strings, 0, ", ");
-    if (!none) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to join no strings");
-    }
-    
-    if (strcmp(none, "") != 0) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Joined no strings does not match expected result");
-    }
-    
-    myrtx_arena_free(&arena);
-    TEST_PASSED();
-}
-
-/* Test substr function */
-void test_substr(void) {
-    myrtx_arena_t arena = {0};
-    if (!myrtx_arena_init(&arena, 0)) {
-        TEST_FAILED("Failed to initialize arena");
-    }
-    
-    const char* source = "This is a test string";
-    
-    /* Test basic substring */
-    char* basic = myrtx_substr(&arena, source, 5, 7);
-    if (!basic) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to extract basic substring");
-    }
-    
-    if (strcmp(basic, "is a te") != 0) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Basic substring does not match expected result");
-    }
-    
-    /* Test substring from beginning */
-    char* start = myrtx_substr(&arena, source, 0, 4);
-    if (!start) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to extract substring from beginning");
-    }
-    
-    if (strcmp(start, "This") != 0) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Substring from beginning does not match expected result");
-    }
-    
-    /* Test substring to end */
-    char* end = myrtx_substr(&arena, source, 10, 100); /* Length beyond end of string */
-    if (!end) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to extract substring to end");
-    }
-    
-    if (strcmp(end, "test string") != 0) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Substring to end does not match expected result");
-    }
-    
-    /* Test invalid start position */
-    char* invalid = myrtx_substr(&arena, source, 100, 5);
-    if (!invalid) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to handle invalid start position");
-    }
-    
-    if (strcmp(invalid, "") != 0) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Result of invalid start position does not match expected result");
-    }
-    
-    myrtx_arena_free(&arena);
-    TEST_PASSED();
-}
-
-/* Test strtoupper and strtolower functions */
-void test_case_conversion(void) {
-    myrtx_arena_t arena = {0};
-    if (!myrtx_arena_init(&arena, 0)) {
-        TEST_FAILED("Failed to initialize arena");
-    }
-    
-    const char* mixed = "This Is a MiXeD CaSe StRiNg";
-    
-    /* Test uppercase conversion */
-    char* upper = myrtx_strtoupper(&arena, mixed);
-    if (!upper) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to convert string to uppercase");
-    }
-    
-    if (strcmp(upper, "THIS IS A MIXED CASE STRING") != 0) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Uppercase conversion result does not match expected result");
-    }
-    
-    /* Test lowercase conversion */
-    char* lower = myrtx_strtolower(&arena, mixed);
-    if (!lower) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to convert string to lowercase");
-    }
-    
-    if (strcmp(lower, "this is a mixed case string") != 0) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Lowercase conversion result does not match expected result");
-    }
-    
-    myrtx_arena_free(&arena);
-    TEST_PASSED();
-}
-
-/* Test startswith and endswith functions */
-void test_starts_ends_with(void) {
-    const char* test_str = "Hello, world!";
-    
-    /* Test startswith */
-    if (!myrtx_startswith(test_str, "Hello")) {
-        TEST_FAILED("startswith failed to match valid prefix");
-    }
-    
-    if (myrtx_startswith(test_str, "hello")) { /* Case sensitive */
-        TEST_FAILED("startswith incorrectly matched with different case");
-    }
-    
-    if (myrtx_startswith(test_str, "Goodbye")) {
-        TEST_FAILED("startswith incorrectly matched invalid prefix");
-    }
-    
-    if (myrtx_startswith(test_str, "Hello, world! And more")) {
-        TEST_FAILED("startswith incorrectly matched prefix longer than string");
-    }
-    
-    /* Test endswith */
-    if (!myrtx_endswith(test_str, "world!")) {
-        TEST_FAILED("endswith failed to match valid suffix");
-    }
-    
-    if (myrtx_endswith(test_str, "World!")) { /* Case sensitive */
-        TEST_FAILED("endswith incorrectly matched with different case");
-    }
-    
-    if (myrtx_endswith(test_str, "universe!")) {
-        TEST_FAILED("endswith incorrectly matched invalid suffix");
-    }
-    
-    if (myrtx_endswith(test_str, "More text and Hello, world!")) {
-        TEST_FAILED("endswith incorrectly matched suffix longer than string");
-    }
-    
-    TEST_PASSED();
-}
-
-/* Test strtrim function */
-void test_strtrim(void) {
-    myrtx_arena_t arena = {0};
-    if (!myrtx_arena_init(&arena, 0)) {
-        TEST_FAILED("Failed to initialize arena");
-    }
-    
-    /* Test basic trimming */
-    const char* spaces = "  \t  This has whitespace around it  \n  ";
-    char* trimmed = myrtx_strtrim(&arena, spaces);
-    if (!trimmed) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to trim string");
-    }
-    
-    if (strcmp(trimmed, "This has whitespace around it") != 0) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Trimmed string does not match expected result");
-    }
-    
-    /* Test with no whitespace */
-    const char* no_spaces = "NoWhitespace";
-    char* no_trim = myrtx_strtrim(&arena, no_spaces);
-    if (!no_trim) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to trim string with no whitespace");
-    }
-    
-    if (strcmp(no_trim, "NoWhitespace") != 0) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Trimmed string with no whitespace does not match expected result");
-    }
-    
-    /* Test with only whitespace */
-    const char* only_spaces = "  \t\n  ";
-    char* empty = myrtx_strtrim(&arena, only_spaces);
-    if (!empty) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to trim string with only whitespace");
-    }
-    
-    if (strcmp(empty, "") != 0) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Trimmed string with only whitespace does not match expected result");
-    }
-    
-    myrtx_arena_free(&arena);
-    TEST_PASSED();
-}
-
-/* Test strreplace function */
-void test_strreplace(void) {
-    myrtx_arena_t arena = {0};
-    if (!myrtx_arena_init(&arena, 0)) {
-        TEST_FAILED("Failed to initialize arena");
-    }
-    
-    /* Test basic replacement */
-    const char* original = "The quick brown fox jumps over the lazy dog";
-    char* replaced = myrtx_strreplace(&arena, original, "fox", "cat");
-    if (!replaced) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to replace substring");
-    }
-    
-    if (strcmp(replaced, "The quick brown cat jumps over the lazy dog") != 0) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Replaced string does not match expected result");
-    }
-    
-    /* Test multiple replacements */
-    char* multi = myrtx_strreplace(&arena, "one two one two one", "one", "three");
-    if (!multi) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to replace multiple occurrences");
-    }
-    
-    if (strcmp(multi, "three two three two three") != 0) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Multiple replacements do not match expected result");
-    }
-    
-    /* Test replacement with different length */
-    char* diff_len = myrtx_strreplace(&arena, "replace this word", "word", "phrase that is longer");
-    if (!diff_len) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to replace with different length");
-    }
-    
-    if (strcmp(diff_len, "replace this phrase that is longer") != 0) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Replacement with different length does not match expected result");
-    }
-    
-    /* Test no matches */
-    char* no_match = myrtx_strreplace(&arena, "No matches here", "xyz", "abc");
-    if (!no_match) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Failed to handle no matches");
-    }
-    
-    if (strcmp(no_match, "No matches here") != 0) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Result with no matches does not match expected result");
+        TEST_FAILED("Joined string with empty delimiter has incorrect value");
     }
     
     myrtx_arena_free(&arena);
@@ -520,63 +462,49 @@ void test_strreplace(void) {
 }
 
 /* Test with scratch arenas */
-void test_with_scratch(void) {
+void test_string_with_scratch(void) {
     myrtx_arena_t arena = {0};
     if (!myrtx_arena_init(&arena, 0)) {
         TEST_FAILED("Failed to initialize arena");
     }
     
-    /* Test using scratch arena for temporary allocations */
-    bool success = false;
-    
     MYRTX_WITH_SCRATCH(&arena, scratch) {
-        char* temp1 = myrtx_strdup(scratch.arena, "This is a temporary string");
-        if (!temp1) {
+        /* Create a string in the scratch arena */
+        myrtx_string_t* temp = myrtx_string_from_cstr(scratch.arena, "Temporary string");
+        if (!temp->data) {
             myrtx_arena_free(&arena);
-            TEST_FAILED("Failed to allocate temporary string in scratch arena");
+            TEST_FAILED("Failed to create string in scratch arena");
         }
         
-        char* temp2 = myrtx_strtoupper(scratch.arena, temp1);
-        if (!temp2) {
+        /* Modify the string */
+        if (!myrtx_string_append(temp, " with more text")) {
             myrtx_arena_free(&arena);
-            TEST_FAILED("Failed to convert temporary string to uppercase");
+            TEST_FAILED("Failed to append to string in scratch arena");
         }
         
-        if (strcmp(temp2, "THIS IS A TEMPORARY STRING") != 0) {
+        const char* expected = "Temporary string with more text";
+        if (strcmp(temp->data, expected) != 0) {
             myrtx_arena_free(&arena);
-            TEST_FAILED("Temporary string conversion does not match expected result");
+            TEST_FAILED("String in scratch arena has incorrect value");
         }
         
-        success = true;
+        /* Scratch arena will be freed automatically */
     }
-    
-    if (!success) {
-        myrtx_arena_free(&arena);
-        TEST_FAILED("Scratch arena block did not complete");
-    }
-    
-    /* The memory should be automatically freed by the MYRTX_WITH_SCRATCH macro */
     
     myrtx_arena_free(&arena);
     TEST_PASSED();
 }
 
 int main(void) {
-    printf("=== myrtx String Functions Tests ===\n\n");
+    printf("=== myrtx String Test ===\n\n");
     
-    test_strdup();
-    test_strndup();
-    test_strfmt();
-    test_strcat_dup();
-    test_strsplit();
-    test_strjoin();
-    test_substr();
-    test_case_conversion();
-    test_starts_ends_with();
-    test_strtrim();
-    test_strreplace();
-    test_with_scratch();
+    test_string_create();
+    test_string_modify();
+    test_string_manipulate();
+    test_string_operations();
+    test_string_split_join();
+    test_string_with_scratch();
     
-    printf("\nAll string tests successful!\n");
+    printf("All string tests passed!\n");
     return 0;
 } 

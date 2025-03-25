@@ -210,16 +210,23 @@ void integer_keys_example(void) {
 
 /* Callback function for traversal */
 bool visit_node_callback(const void* key, void* value, void* user_data) {
+    /* Cast key to required type */
     const char* key_str = (const char*)key;
-    printf("Visiting node: key='%s'\n", key_str);
     
-    /* Stop traversal if the specific key is found */
-    if (strcmp(key_str, (const char*)user_data) == 0) {
-        printf("Target key '%s' found, stopping traversal\n", (const char*)user_data);
-        return false;  /* Stop traversal */
-    }
+    /* Verwendung von value um unused-Parameter-Warnung zu vermeiden */
+    (void)value;
     
-    return true;  /* Continue traversal */
+    /* Get user data */
+    int* counter = (int*)user_data;
+    
+    /* Print info */
+    printf("  Node: %s", key_str);
+    
+    /* Update counter */
+    (*counter)++;
+    
+    /* Continue traversal */
+    return true;
 }
 
 /* Example for traversal */

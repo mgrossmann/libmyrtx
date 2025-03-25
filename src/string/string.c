@@ -190,6 +190,11 @@ void myrtx_string_free(myrtx_string_t* str, bool force) {
     str->data = NULL;
     str->length = 0;
     str->capacity = 0;
+    
+    /* Free the structure itself if using malloc */
+    if (!str->arena) {
+        free(str);
+    }
 }
 
 size_t myrtx_string_length(const myrtx_string_t* str) {
@@ -583,6 +588,7 @@ bool myrtx_string_replace(myrtx_string_t* str, const char* old_str, const char* 
         return true;  /* Nothing to replace */
     }
     
+    /* Ermittle die neue String-Länge */
     size_t new_len = strlen(new_str);
     
     /* Find first occurrence */
@@ -604,8 +610,10 @@ bool myrtx_string_replace(myrtx_string_t* str, const char* old_str, const char* 
         /* Append text up to the occurrence */
         myrtx_string_append_buffer(temp, str->data + last_pos, pos - last_pos);
         
-        /* Append replacement text */
-        myrtx_string_append(temp, new_str);
+        /* Append replacement text using new_len */
+        if (new_len > 0) {
+            myrtx_string_append_buffer(temp, new_str, new_len);
+        }
         
         /* Update position for next search */
         last_pos = pos + old_len;
@@ -1167,52 +1175,54 @@ char* myrtx_strtrim(myrtx_arena_t* arena, const char* str) {
 }
 
 char* myrtx_strreplace(myrtx_arena_t* arena, const char* str, const char* old_str, const char* new_str) {
-    if (!arena || !str || !old_str || !new_str) {
+    if (!str || !old_str || !new_str) {
         return NULL;
     }
     
     size_t old_len = strlen(old_str);
+    
+    /* If old string is empty, just duplicate the input string */
     if (old_len == 0) {
-        /* Cannot replace an empty string */
         return myrtx_strdup(arena, str);
     }
     
-    size_t new_len = strlen(new_str);
-    
-    /* Count occurrences of old_str in str */
-    size_t count = 0;
+    /* Calculate total size */
+    size_t len = strlen(str);
     const char* p = str;
+    size_t count = 0;
     
+    /* Count occurrences of old_str */
     while ((p = strstr(p, old_str)) != NULL) {
         count++;
         p += old_len;
     }
     
+    /* If no occurrences, just duplicate the input string */
     if (count == 0) {
-        /* No replacements needed */
         return myrtx_strdup(arena, str);
     }
     
-    /* Calculate the new string length */
-    size_t str_len = strlen(str);
-    size_t result_len = str_len + (new_len - old_len) * count;
+    /* Calculate final size for new string */
+    /* We remove old_len * count bytes and add new_len * count bytes */
+    size_t new_len = strlen(new_str);
+    size_t final_size = len + (new_len - old_len) * count + 1;
     
     /* Allocate memory for the result */
-    char* result = (char*)myrtx_arena_alloc(arena, result_len + 1);
+    char* result = myrtx_arena_alloc(arena, final_size);
     if (!result) {
         return NULL;
     }
     
-    /* Perform replacement */
+    /* Perform replacements */
     char* dst = result;
     const char* src = str;
     const char* match;
     
     while ((match = strstr(src, old_str)) != NULL) {
         /* Copy everything up to the match */
-        size_t len = match - src;
-        memcpy(dst, src, len);
-        dst += len;
+        size_t copy_len = match - src;
+        memcpy(dst, src, copy_len);
+        dst += copy_len;
         
         /* Copy the replacement */
         memcpy(dst, new_str, new_len);
@@ -1222,7 +1232,7 @@ char* myrtx_strreplace(myrtx_arena_t* arena, const char* str, const char* old_st
         src = match + old_len;
     }
     
-    /* Copy the remainder of the source string */
+    /* Copy the remaining part of the input string */
     strcpy(dst, src);
     
     return result;

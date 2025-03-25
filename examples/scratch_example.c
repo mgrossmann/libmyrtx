@@ -142,7 +142,7 @@ void early_return_example(myrtx_arena_t* arena, int condition) {
         
         // Allocate some memory
         void* data = myrtx_arena_alloc(scratch.arena, 256);
-        printf("Memory allocated in scratch arena\n");
+        printf("Memory allocated in scratch arena: %p\n", data);
         
         // Return early if the condition is met
         if (condition) {

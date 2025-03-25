@@ -12,13 +12,13 @@ target_link_libraries(context_example PRIVATE myrtx)
 target_include_directories(context_example PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 # String examples
+add_executable(string_utils_example string_utils_example.c)
+target_link_libraries(string_utils_example PRIVATE myrtx)
+target_include_directories(string_utils_example PRIVATE ${CMAKE_SOURCE_DIR}/include)
+
 add_executable(string_example string_example.c)
 target_link_libraries(string_example PRIVATE myrtx)
 target_include_directories(string_example PRIVATE ${CMAKE_SOURCE_DIR}/include)
-
-add_executable(string_type_example string_type_example.c)
-target_link_libraries(string_type_example PRIVATE myrtx)
-target_include_directories(string_type_example PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 # Collections examples
 add_executable(hash_table_example hash_table_example.c)

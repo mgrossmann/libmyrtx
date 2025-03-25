@@ -203,8 +203,7 @@ libmyrtx/
 │       ├── context/
 │       │   └── context.h
 │       ├── string/
-│       │   ├── string.h
-│       │   └── string_type.h
+│       │   └── string.h
 │       └── collections/
 │           ├── hash_table.h
 │           └── avl_tree.h
@@ -214,8 +213,7 @@ libmyrtx/
 │   ├── context/
 │   │   └── context.c
 │   ├── string/
-│   │   ├── string.c
-│   │   └── string_type.c
+│   │   └── string.c
 │   └── collections/
 │       ├── hash_table.c
 │       └── avl_tree.c

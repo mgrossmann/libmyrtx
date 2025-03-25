@@ -47,13 +47,14 @@ static void* hash_table_malloc(myrtx_hash_table_t* table, size_t size) {
     }
 }
 
-/* Speicherfreigabefunktion für malloc-basierte Speicherzuweisungen */
+/* Helfer-Funktion zum Freigeben von Speicher - wird aktuell nicht genutzt */
+#ifdef UNUSED_FUNCTION
 static void hash_table_free(myrtx_hash_table_t* table, void* ptr) {
-    if (!table->arena) {
+    if (!table->arena && ptr) {
         free(ptr);
     }
-    /* Bei Arena-Allokation ist keine Freigabe einzelner Elemente notwendig */
 }
+#endif
 
 /* Findet die nächsthöhere Potenz von 2 */
 static size_t next_power_of_2(size_t n) {
@@ -537,10 +538,12 @@ uint32_t myrtx_hash_string(const void* key, size_t key_size) {
 
 /* Hash-Funktion für Integer-Schlüssel */
 uint32_t myrtx_hash_integer(const void* key, size_t key_size) {
-    /* Einfache Implementierung für Integer, unabhängig von der Größe */
+    (void)key_size; /* Unused parameter */
+    
+    /* Integer direkt als Hash-Wert verwenden */
     int value = *(const int*)key;
     
-    /* Knuth's Multiplikationsmethode */
+    /* Knuth's Multiplikationsmethode für bessere Verteilung */
     return (uint32_t)(value * 2654435761u);
 }
 
@@ -577,8 +580,14 @@ bool myrtx_compare_string_keys(const void* key1, size_t key1_size,
 }
 
 /* Vergleichsfunktion für Integer-Schlüssel */
-bool myrtx_compare_integer_keys(const void* key1, size_t key1_size, 
+bool myrtx_compare_integer_keys(const void* key1, size_t key1_size,
                                const void* key2, size_t key2_size) {
-    /* Einfacher Vergleich der Integer-Werte */
-    return *(const int*)key1 == *(const int*)key2;
+    (void)key1_size; /* Unused parameter */
+    (void)key2_size; /* Unused parameter */
+    
+    /* Vergleiche die Integer-Werte direkt */
+    int int1 = *(const int*)key1;
+    int int2 = *(const int*)key2;
+    
+    return int1 == int2;
 } 

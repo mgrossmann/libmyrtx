@@ -144,17 +144,28 @@ void test_balancing(void) {
 
 /* Helper function for counting traversed nodes */
 static bool count_nodes_callback(const void* key, void* value, void* user_data) {
-    int* count = (int*)user_data;
-    (*count)++;
-    return true; /* Continue traversal */
+    /* Mark unused parameters to avoid compiler warnings */
+    (void)key;
+    (void)value;
+    
+    /* Increment counter */
+    int* counter = (int*)user_data;
+    (*counter)++;
+    return true;
 }
 
 /* Helper function for early traversal termination */
 static bool early_stop_callback(const void* key, void* value, void* user_data) {
-    int* stop_count = (int*)user_data;
-    (*stop_count)++;
-    /* Stop after three nodes */
-    return (*stop_count < 3);
+    /* Mark unused parameters to avoid compiler warnings */
+    (void)key;
+    (void)value;
+    
+    /* Get and update counter */
+    int* counter = (int*)user_data;
+    (*counter)++;
+    
+    /* Stop after 3 nodes */
+    return *counter < 3;
 }
 
 /* Test for traversal functions */

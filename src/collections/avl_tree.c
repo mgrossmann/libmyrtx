@@ -40,15 +40,6 @@ static void* avl_tree_malloc(myrtx_avl_tree_t* tree, size_t size) {
 }
 
 /**
- * Frees memory when no arena allocator is used
- */
-static void avl_tree_free(myrtx_avl_tree_t* tree, void* ptr) {
-    if (!tree->arena && ptr) {
-        free(ptr);
-    }
-}
-
-/**
  * Creates a new node
  */
 static myrtx_avl_node_t* create_node(myrtx_avl_tree_t* tree, void* key, void* value) {
@@ -655,9 +646,11 @@ int myrtx_avl_compare_strings(const void* key1, const void* key2, void* user_dat
 }
 
 int myrtx_avl_compare_integers(const void* key1, const void* key2, void* user_data) {
-    const int int1 = *(const int*)key1;
-    const int int2 = *(const int*)key2;
-    (void)user_data; /* Unused */
+    /* Einfache Integer-Vergleichsfunktion */
+    (void)user_data; /* Unused parameter */
+    
+    int int1 = *(const int*)key1;
+    int int2 = *(const int*)key2;
     
     return int1 - int2;
 } 
