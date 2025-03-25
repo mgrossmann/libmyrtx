@@ -3,9 +3,11 @@
  * @brief Example usage of the myrtx Context System
  */
 
-#include "myrtx/myrtx.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
+#include "myrtx/myrtx.h"
 
 /* Example custom extension */
 typedef struct {

@@ -5,6 +5,7 @@
 
 #include "myrtx/memory/arena_allocator.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 
 /* Structure for test items */

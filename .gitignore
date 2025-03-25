@@ -2,6 +2,7 @@
 build/
 cmake-build-*/
 out/
+.cache/
 
 # Kompilierte Objekte und Binaries
 *.o
@@ -64,4 +65,4 @@ compile_commands.json
 CTestTestfile.cmake
 
 # Gegenerierte Header
-include/myrtx/version.h 
+include/myrtx/version.h

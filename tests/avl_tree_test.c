@@ -149,6 +149,14 @@ static bool count_nodes_callback(const void* key, void* value, void* user_data) 
     return true; /* Continue traversal */
 }
 
+/* Helper function for early traversal termination */
+static bool early_stop_callback(const void* key, void* value, void* user_data) {
+    int* stop_count = (int*)user_data;
+    (*stop_count)++;
+    /* Stop after three nodes */
+    return (*stop_count < 3);
+}
+
 /* Test for traversal functions */
 void test_traversal(void) {
     printf("\n=== Test: Traversal Functions ===\n");
@@ -189,13 +197,6 @@ void test_traversal(void) {
     TEST_ASSERT(count == num_keys, "Post-order traversal visits all nodes");
     
     /* Early traversal termination */
-    bool early_stop_callback(const void* key, void* value, void* user_data) {
-        int* stop_count = (int*)user_data;
-        (*stop_count)++;
-        /* Stop after three nodes */
-        return (*stop_count < 3);
-    }
-    
     count = 0;
     myrtx_avl_tree_traverse_inorder(tree, early_stop_callback, &count);
     TEST_ASSERT(count == 3, "Early traversal termination works");

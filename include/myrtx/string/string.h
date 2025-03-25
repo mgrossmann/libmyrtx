@@ -35,18 +35,18 @@ typedef struct myrtx_string {
  * 
  * @param arena Pointer to the arena to allocate from, or NULL to use malloc
  * @param initial_capacity Initial capacity for the string
- * @return myrtx_string_t New string or {NULL, 0, 0, NULL} on failure
+ * @return myrtx_string_t* New string or NULL on failure
  */
-myrtx_string_t myrtx_string_create(myrtx_arena_t* arena, size_t initial_capacity);
+myrtx_string_t* myrtx_string_create(myrtx_arena_t* arena, size_t initial_capacity);
 
 /**
  * @brief Create a string from a C string
  * 
  * @param arena Pointer to the arena to allocate from, or NULL to use malloc
  * @param cstr C string to copy
- * @return myrtx_string_t New string or {NULL, 0, 0, NULL} on failure
+ * @return myrtx_string_t* New string or NULL on failure
  */
-myrtx_string_t myrtx_string_from_cstr(myrtx_arena_t* arena, const char* cstr);
+myrtx_string_t* myrtx_string_from_cstr(myrtx_arena_t* arena, const char* cstr);
 
 /**
  * @brief Create a string from a memory buffer with explicit length
@@ -54,9 +54,9 @@ myrtx_string_t myrtx_string_from_cstr(myrtx_arena_t* arena, const char* cstr);
  * @param arena Pointer to the arena to allocate from, or NULL to use malloc
  * @param buffer Memory buffer to copy
  * @param length Length of the buffer
- * @return myrtx_string_t New string or {NULL, 0, 0, NULL} on failure
+ * @return myrtx_string_t* New string or NULL on failure
  */
-myrtx_string_t myrtx_string_from_buffer(myrtx_arena_t* arena, const char* buffer, size_t length);
+myrtx_string_t* myrtx_string_from_buffer(myrtx_arena_t* arena, const char* buffer, size_t length);
 
 /**
  * @brief Create a formatted string
@@ -64,9 +64,9 @@ myrtx_string_t myrtx_string_from_buffer(myrtx_arena_t* arena, const char* buffer
  * @param arena Pointer to the arena to allocate from, or NULL to use malloc
  * @param format Format string (printf style)
  * @param ... Format arguments
- * @return myrtx_string_t New string or {NULL, 0, 0, NULL} on failure
+ * @return myrtx_string_t* New string or NULL on failure
  */
-myrtx_string_t myrtx_string_format(myrtx_arena_t* arena, const char* format, ...);
+myrtx_string_t* myrtx_string_format(myrtx_arena_t* arena, const char* format, ...);
 
 /**
  * @brief Free resources used by a string
@@ -122,23 +122,32 @@ bool myrtx_string_set(myrtx_string_t* str, const char* cstr);
 bool myrtx_string_set_buffer(myrtx_string_t* str, const char* buffer, size_t length);
 
 /**
- * @brief Append a C string to a string
+ * @brief Append a C string to the end of a string
  * 
  * @param str String to append to
  * @param cstr C string to append
- * @return bool true on success, false on failure
+ * @return myrtx_string_t* The modified string or NULL on failure
  */
-bool myrtx_string_append(myrtx_string_t* str, const char* cstr);
+myrtx_string_t* myrtx_string_append(myrtx_string_t* str, const char* cstr);
 
 /**
- * @brief Append a buffer to a string
+ * @brief Append a buffer to the end of a string
  * 
  * @param str String to append to
- * @param buffer Memory buffer to append
+ * @param buffer Buffer to append
  * @param length Length of the buffer
- * @return bool true on success, false on failure
+ * @return myrtx_string_t* The modified string or NULL on failure
  */
-bool myrtx_string_append_buffer(myrtx_string_t* str, const char* buffer, size_t length);
+myrtx_string_t* myrtx_string_append_buffer(myrtx_string_t* str, const char* buffer, size_t length);
+
+/**
+ * @brief Append a single character to the end of a string
+ * 
+ * @param str String to append to
+ * @param c Character to append
+ * @return myrtx_string_t* The modified string or NULL on failure
+ */
+myrtx_string_t* myrtx_string_append_char(myrtx_string_t* str, char c);
 
 /**
  * @brief Append a formatted string to a string
@@ -175,24 +184,24 @@ bool myrtx_string_is_empty(const myrtx_string_t* str);
 void myrtx_string_clear(myrtx_string_t* str);
 
 /**
- * @brief Get a substring of a string
+ * @brief Create a substring
  * 
  * @param arena Pointer to the arena to allocate from, or NULL to use malloc
  * @param str Source string
- * @param start Starting position
- * @param length Length of the substring to extract
- * @return myrtx_string_t New string or {NULL, 0, 0, NULL} on failure
+ * @param start Starting position (0-based)
+ * @param length Length of substring (0 for until end)
+ * @return myrtx_string_t* New substring or NULL on failure
  */
-myrtx_string_t myrtx_string_substr(myrtx_arena_t* arena, const myrtx_string_t* str, size_t start, size_t length);
+myrtx_string_t* myrtx_string_substr(myrtx_arena_t* arena, const myrtx_string_t* str, size_t start, size_t length);
 
 /**
- * @brief Make a copy of a string
+ * @brief Clone a string
  * 
  * @param arena Pointer to the arena to allocate from, or NULL to use malloc
- * @param str String to clone
- * @return myrtx_string_t New string or {NULL, 0, 0, NULL} on failure
+ * @param str Source string
+ * @return myrtx_string_t* New string or NULL on failure
  */
-myrtx_string_t myrtx_string_clone(myrtx_arena_t* arena, const myrtx_string_t* str);
+myrtx_string_t* myrtx_string_clone(myrtx_arena_t* arena, const myrtx_string_t* str);
 
 /**
  * @brief Resize a string to a new capacity
@@ -269,15 +278,15 @@ bool myrtx_string_replace(myrtx_string_t* str, const char* old_str, const char* 
 myrtx_string_t* myrtx_string_split(myrtx_arena_t* arena, const myrtx_string_t* str, const char* delimiter, size_t* count);
 
 /**
- * @brief Join an array of strings with a delimiter
+ * @brief Join multiple strings with a delimiter
  * 
  * @param arena Pointer to the arena to allocate from, or NULL to use malloc
  * @param strings Array of strings to join
  * @param count Number of strings
- * @param delimiter Delimiter string
- * @return myrtx_string_t New string or {NULL, 0, 0, NULL} on failure
+ * @param delimiter Delimiter string between elements
+ * @return myrtx_string_t* Joined string or NULL on failure
  */
-myrtx_string_t myrtx_string_join(myrtx_arena_t* arena, const myrtx_string_t* strings, size_t count, const char* delimiter);
+myrtx_string_t* myrtx_string_join(myrtx_arena_t* arena, const myrtx_string_t* strings, size_t count, const char* delimiter);
 
 /**
  * @brief Find the first occurrence of a substring in a string
