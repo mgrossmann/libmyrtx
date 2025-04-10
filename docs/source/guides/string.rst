@@ -286,68 +286,68 @@ Best Practices
 5. **Error Checking**: Check the return values of string functions to detect errors.
 
 Migration Example
----------------
+~~~~~~~~~~~~~~~
 
 Here's an example of how to migrate from standard C string processing to the libmyrtx String library:
 
-**Before (Standard C):**
+Before (Standard C):
 
-```c
-char buffer[256];
-char* result = malloc(1024);
-if (!result) return;
+.. code-block:: c
 
-strcpy(buffer, "Hello, ");
-strcat(buffer, username);
-strcat(buffer, "! ");
+    char buffer[256];
+    char* result = malloc(1024);
+    if (!result) return;
 
-sprintf(result, "%sWelcome to %s. You have %d new messages.", 
-        buffer, app_name, message_count);
+    strcpy(buffer, "Hello, ");
+    strcat(buffer, username);
+    strcat(buffer, "! ");
 
-// Use result...
+    sprintf(result, "%sWelcome to %s. You have %d new messages.",
+            buffer, app_name, message_count);
 
-free(result);
-```
+    // Use result...
 
-**After (with libmyrtx):**
+    free(result);
 
-```c
-myrtx_string_t* greeting = myrtx_string_create();
-if (!greeting) return;
+After (with libmyrtx):
 
-myrtx_string_append_cstr(greeting, "Hello, ");
-myrtx_string_append_cstr(greeting, username);
-myrtx_string_append_cstr(greeting, "! ");
+.. code-block:: c
 
-myrtx_string_append_format(greeting, "Welcome to %s. You have %d new messages.",
-                         app_name, message_count);
+    myrtx_string_t* greeting = myrtx_string_create();
+    if (!greeting) return;
 
-// Use myrtx_string_cstr(greeting)...
+    myrtx_string_append_cstr(greeting, "Hello, ");
+    myrtx_string_append_cstr(greeting, username);
+    myrtx_string_append_cstr(greeting, "! ");
 
-myrtx_string_free(greeting);
-```
+    myrtx_string_append_format(greeting, "Welcome to %s. You have %d new messages.",
+                              app_name, message_count);
+
+    // Use myrtx_string_cstr(greeting)...
+
+    myrtx_string_free(greeting);
 
 Error Handling
---------------
+~~~~~~~~~~~~
 
 String functions return error codes when operations fail:
 
-```c
-myrtx_string_t* str = myrtx_string_create();
-if (!str) {
-    fprintf(stderr, "Error: Could not create string\n");
-    return;
-}
+.. code-block:: c
 
-int result = myrtx_string_append_cstr(str, "Data");
-if (result != 0) {
-    fprintf(stderr, "Error appending to string: %d\n", result);
+    myrtx_string_t* str = myrtx_string_create();
+    if (!str) {
+        fprintf(stderr, "Error: Could not create string\n");
+        return;
+    }
+
+    int result = myrtx_string_append_cstr(str, "Data");
+    if (result != 0) {
+        fprintf(stderr, "Error appending to string: %d\n", result);
+        myrtx_string_free(str);
+        return;
+    }
+
     myrtx_string_free(str);
-    return;
-}
-
-myrtx_string_free(str);
-```
 
 Conclusion
 ------------
