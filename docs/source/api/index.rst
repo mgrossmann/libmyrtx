@@ -10,3 +10,4 @@ This section provides detailed reference for the libmyrtx API.
    collections
    context
    string
+   hashtable
