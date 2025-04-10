@@ -204,56 +204,153 @@ Hash Table
 
 The Hash Table is a high-performance implementation for key-value storage with constant time complexity for most operations.
 
-Data Structures
-~~~~~~~~~~~~~
+Types
+~~~~~
 
 .. c:type:: myrtx_hashtable_t
 
-   A hash table structure that stores key-value pairs.
+   Opaque structure representing a hash table.
+
+.. c:type:: myrtx_hashtable_entry_t
+
+   Opaque structure representing an entry in the hash table.
+
+.. c:type:: myrtx_hashtable_hash_function
+
+   Function pointer type for computing hash values.
 
    .. code-block:: c
 
-      typedef struct {
-          size_t size;
-          size_t capacity;
-          myrtx_hashtable_entry_t *entries;
-          myrtx_allocator_t *allocator;
-      } myrtx_hashtable_t;
+      typedef uint64_t (*myrtx_hashtable_hash_function)(const void* key, size_t key_size, void* user_data);
 
-Functions
-~~~~~~~~
+.. c:type:: myrtx_hashtable_compare_function
 
-.. c:function:: myrtx_hashtable_t* myrtx_hashtable_create(myrtx_allocator_t *allocator)
+   Function pointer type for comparing keys in the hash table.
 
-   Create a new hash table.
+   .. code-block:: c
+
+      typedef bool (*myrtx_hashtable_compare_function)(const void* key1, const void* key2, size_t key_size, void* user_data);
+
+.. c:type:: myrtx_hashtable_free_function
+
+   Function pointer type for freeing keys and values when entries are removed.
+
+   .. code-block:: c
+
+      typedef void (*myrtx_hashtable_free_function)(void* key, void* value, void* user_data);
+
+Creation and Destruction
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. c:function:: myrtx_hashtable_t* myrtx_hashtable_create(myrtx_allocator_t *allocator, myrtx_hashtable_hash_function hash_function, myrtx_hashtable_compare_function compare_function, void* user_data)
+
+   Creates a new hash table.
 
    :param allocator: The allocator to use for memory management
-   :return: A pointer to the newly created hash table, or NULL on failure
+   :param hash_function: Function for computing hash values
+   :param compare_function: Function for comparing keys
+   :param user_data: User-defined data passed to the hash and compare functions
+   :return: Pointer to the new hash table or NULL on error
 
-.. c:function:: void myrtx_hashtable_destroy(myrtx_hashtable_t *table)
+.. c:function:: void myrtx_hashtable_destroy(myrtx_hashtable_t *table, myrtx_hashtable_free_function free_function, void* user_data)
 
-   Destroy a hash table and free its resources.
+   Frees a hash table.
 
-   :param table: The hash table to destroy
+   :param table: Pointer to the hash table
+   :param free_function: Optional function to free keys and values (NULL if not needed)
+   :param user_data: User-defined data for the free function
 
-.. c:function:: bool myrtx_hashtable_insert(myrtx_hashtable_t *table, const void *key, size_t key_size, void *value)
+Insertion and Removal
+~~~~~~~~~~~~~~~~~~~~
 
-   Insert a key-value pair into the hash table.
+.. c:function:: bool myrtx_hashtable_insert(myrtx_hashtable_t *table, const void *key, size_t key_size, void *value, void** existing_value)
 
-   :param table: The hash table
-   :param key: The key to insert
-   :param key_size: The size of the key in bytes
-   :param value: The value to associate with the key
-   :return: true if successful, false otherwise
+   Inserts or updates a key-value pair in the hash table.
 
-.. c:function:: void* myrtx_hashtable_get(myrtx_hashtable_t *table, const void *key, size_t key_size)
+   :param table: Pointer to the hash table
+   :param key: Pointer to the key
+   :param key_size: Size of the key in bytes
+   :param value: Pointer to the value
+   :param existing_value: Pointer to store the previous value (NULL if not needed)
+   :return: true on success, false on error
 
-   Retrieve a value from the hash table by key.
+.. c:function:: bool myrtx_hashtable_remove(myrtx_hashtable_t *table, const void *key, size_t key_size, void** key_out, void** value_out)
 
-   :param table: The hash table
-   :param key: The key to look up
-   :param key_size: The size of the key in bytes
-   :return: The associated value, or NULL if not found
+   Removes an entry from the hash table.
+
+   :param table: Pointer to the hash table
+   :param key: Pointer to the key to remove
+   :param key_size: Size of the key in bytes
+   :param key_out: Pointer to store the removed key (NULL if not needed)
+   :param value_out: Pointer to store the removed value (NULL if not needed)
+   :return: true if the key was found and removed, false otherwise
+
+Lookup Functions
+~~~~~~~~~~~~~~~
+
+.. c:function:: bool myrtx_hashtable_get(myrtx_hashtable_t *table, const void *key, size_t key_size, void** value_out)
+
+   Searches for a value in the hash table by key.
+
+   :param table: Pointer to the hash table
+   :param key: Pointer to the key to search for
+   :param key_size: Size of the key in bytes
+   :param value_out: Pointer to store the found value (NULL if not needed)
+   :return: true if the key was found, false otherwise
+
+.. c:function:: bool myrtx_hashtable_contains(myrtx_hashtable_t *table, const void *key, size_t key_size)
+
+   Checks if the hash table contains a specific key.
+
+   :param table: Pointer to the hash table
+   :param key: Pointer to the key to search for
+   :param key_size: Size of the key in bytes
+   :return: true if the key was found, false otherwise
+
+Utility Functions
+~~~~~~~~~~~~~~~
+
+.. c:function:: size_t myrtx_hashtable_size(const myrtx_hashtable_t *table)
+
+   Returns the number of entries in the hash table.
+
+   :param table: Pointer to the hash table
+   :return: Number of entries
+
+.. c:function:: bool myrtx_hashtable_is_empty(const myrtx_hashtable_t *table)
+
+   Checks if the hash table is empty.
+
+   :param table: Pointer to the hash table
+   :return: true if the table is empty, false otherwise
+
+.. c:function:: size_t myrtx_hashtable_capacity(const myrtx_hashtable_t *table)
+
+   Returns the current capacity of the hash table.
+
+   :param table: Pointer to the hash table
+   :return: Current capacity
+
+Predefined Hash Functions
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. c:function:: uint64_t myrtx_hashtable_hash_string(const void* key, size_t key_size, void* user_data)
+
+   Standard hash function for string keys.
+
+   :param key: Pointer to the string
+   :param key_size: Size of the string including null terminator
+   :param user_data: Not used
+   :return: Hash value for the string
+
+.. c:function:: uint64_t myrtx_hashtable_hash_integer(const void* key, size_t key_size, void* user_data)
+
+   Standard hash function for integer keys.
+
+   :param key: Pointer to the integer
+   :param key_size: Size of the integer (must be sizeof(int))
+   :param user_data: Not used
+   :return: Hash value for the integer
 
 Example
 ~~~~~~~
@@ -265,19 +362,23 @@ Example
 
    int main() {
        myrtx_allocator_t *allocator = myrtx_allocator_create_default();
-       myrtx_hashtable_t *table = myrtx_hashtable_create(allocator);
+       myrtx_hashtable_t *table = myrtx_hashtable_create(
+           allocator,
+           myrtx_hashtable_hash_string,
+           myrtx_hashtable_compare_strings,
+           NULL
+       );
 
        const char *key = "example";
        int value = 42;
 
-       myrtx_hashtable_insert(table, key, strlen(key) + 1, &value);
-       int *retrieved = myrtx_hashtable_get(table, key, strlen(key) + 1);
-
-       if (retrieved) {
+       myrtx_hashtable_insert(table, key, strlen(key) + 1, &value, NULL);
+       int *retrieved;
+       if (myrtx_hashtable_get(table, key, strlen(key) + 1, &retrieved)) {
            printf("Value: %d\n", *retrieved);
        }
 
-       myrtx_hashtable_destroy(table);
+       myrtx_hashtable_destroy(table, NULL, NULL);
        myrtx_allocator_destroy(allocator);
        return 0;
    } 
