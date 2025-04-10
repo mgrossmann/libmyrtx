@@ -11,7 +11,7 @@ import sphinx_rtd_theme
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'libmyrtx'
-copyright = '2023, libmyrtx Contributors'
+copyright = '2025, Mike Großmann'
 author = 'libmyrtx Contributors'
 version = '0.1.0'  # The short X.Y version
 release = '0.1.0'  # The full version, including alpha/beta/rc tags

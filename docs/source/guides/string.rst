@@ -16,238 +16,251 @@ The standard C library provides basic string functions, but has several signific
 3. **Lack of safety**: The standard functions offer little protection against buffer overflows.
 4. **Inefficient concatenations**: Repeated concatenations often result in unnecessary copy operations.
 
-The `myrtx_string_t` implementation provides solutions to these problems and adds useful functions that simplify string processing in C applications.
+The ``myrtx_string_t`` implementation provides solutions to these problems and adds useful functions that simplify string processing in C applications.
 
 Core Concepts
 -----------
 
 The String library works with two main concepts:
 
-1. **Dynamic Strings**: `myrtx_string_t` is an opaque structure that represents a dynamically growing string with automatic memory management.
-2. **String Views**: `myrtx_string_view_t` is a lightweight, non-owning view of a string or memory region.
+1. **Dynamic Strings**: ``myrtx_string_t`` is an opaque structure that represents a dynamically growing string with automatic memory management.
+2. **String Views**: ``myrtx_string_view_t`` is a lightweight, non-owning view of a string or memory region.
 
-### Dynamic Strings (`myrtx_string_t`)
+Dynamic Strings
+~~~~~~~~~~~~~
 
 Dynamic strings automatically manage their own memory. They grow as needed to accommodate content and can efficiently perform operations like appending, inserting, and deleting.
 
-### String Views (`myrtx_string_view_t`)
+String Views
+~~~~~~~~~~
 
 String views provide a non-owning view of a string or memory region. They consist of a pointer to the data and a length, and are useful when you want to reference part of a larger string without copying the content.
 
 Basic Usage
---------------------
+----------
 
-### Creating and Freeing Strings
+Creating and Freeing Strings
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-```c
-#include <myrtx/string.h>
+.. code-block:: c
 
-// Create an empty string
-myrtx_string_t* str = myrtx_string_create();
-if (!str) {
-    // Error handling
-}
+    #include <myrtx/string.h>
 
-// Create a string from a C string
-myrtx_string_t* greeting = myrtx_string_create_from_cstr("Hello, World!");
-if (!greeting) {
-    // Error handling
-}
+    // Create an empty string
+    myrtx_string_t* str = myrtx_string_create();
+    if (!str) {
+        // Error handling
+    }
 
-// Don't forget to free the strings when they are no longer needed
-myrtx_string_free(str);
-myrtx_string_free(greeting);
-```
+    // Create a string from a C string
+    myrtx_string_t* greeting = myrtx_string_create_from_cstr("Hello, World!");
+    if (!greeting) {
+        // Error handling
+    }
 
-### With Arena Allocator
+    // Don't forget to free the strings when they are no longer needed
+    myrtx_string_free(str);
+    myrtx_string_free(greeting);
+
+With Arena Allocator
+~~~~~~~~~~~~~~~~~~
 
 For even more efficient memory management, the String library can be integrated with the libmyrtx Arena Allocator:
 
-```c
-#include <myrtx/string.h>
-#include <myrtx/memory.h>
+.. code-block:: c
 
-// Initialize arena
-myrtx_arena_t arena;
-myrtx_arena_init(&arena, 4096);  // 4KB block size
+    #include <myrtx/string.h>
+    #include <myrtx/memory.h>
 
-// Create a string that uses the arena
-myrtx_string_t* str = myrtx_string_create_from_arena(&arena);
+    // Initialize arena
+    myrtx_arena_t arena;
+    myrtx_arena_init(&arena, 4096);  // 4KB block size
 
-// ... perform string operations ...
+    // Create a string that uses the arena
+    myrtx_string_t* str = myrtx_string_create_from_arena(&arena);
 
-// Free the arena (also frees all associated strings)
-myrtx_arena_free(&arena);
-```
+    // ... perform string operations ...
+
+    // Free the arena (also frees all associated strings)
+    myrtx_arena_free(&arena);
 
 String Operations
-----------------
+---------------
 
-### Appending Data
+Appending Data
+~~~~~~~~~~~~
 
-```c
-myrtx_string_t* name = myrtx_string_create();
+.. code-block:: c
 
-// Append C string
-myrtx_string_append_cstr(name, "John");
+    myrtx_string_t* name = myrtx_string_create();
 
-// Append single character
-myrtx_string_append_char(name, ' ');
+    // Append C string
+    myrtx_string_append_cstr(name, "John");
 
-// Append buffer with specified length
-const char* surname = "Smith";
-myrtx_string_append(name, surname, strlen(surname));
+    // Append single character
+    myrtx_string_append_char(name, ' ');
 
-// Append formatted data
-myrtx_string_append_format(name, " (Age: %d)", 30);
+    // Append buffer with specified length
+    const char* surname = "Smith";
+    myrtx_string_append(name, surname, strlen(surname));
 
-printf("Name: %s\n", myrtx_string_cstr(name));  // "John Smith (Age: 30)"
+    // Append formatted data
+    myrtx_string_append_format(name, " (Age: %d)", 30);
 
-myrtx_string_free(name);
-```
+    printf("Name: %s\n", myrtx_string_cstr(name));  // "John Smith (Age: 30)"
 
-### String Comparison
+    myrtx_string_free(name);
 
-```c
-myrtx_string_t* str1 = myrtx_string_create_from_cstr("Apple");
-myrtx_string_t* str2 = myrtx_string_create_from_cstr("Banana");
+String Comparison
+~~~~~~~~~~~~~~
 
-// Check if strings are equal
-bool equal = myrtx_string_equals(str1, str2);  // false
+.. code-block:: c
 
-// Lexicographical comparison
-int cmp = myrtx_string_compare(str1, str2);  // Negative, since "Apple" comes before "Banana" lexicographically
+    myrtx_string_t* str1 = myrtx_string_create_from_cstr("Apple");
+    myrtx_string_t* str2 = myrtx_string_create_from_cstr("Banana");
 
-// Comparison with C string
-bool equals_cstr = myrtx_string_equals_cstr(str1, "Apple");  // true
+    // Check if strings are equal
+    bool equal = myrtx_string_equals(str1, str2);  // false
 
-myrtx_string_free(str1);
-myrtx_string_free(str2);
-```
+    // Lexicographical comparison
+    int cmp = myrtx_string_compare(str1, str2);  // Negative, since "Apple" comes before "Banana" lexicographically
 
-### String Modification
+    // Comparison with C string
+    bool equals_cstr = myrtx_string_equals_cstr(str1, "Apple");  // true
 
-```c
-myrtx_string_t* text = myrtx_string_create_from_cstr("This is a sample text.");
+    myrtx_string_free(str1);
+    myrtx_string_free(str2);
 
-// Replace part of the string
-myrtx_string_replace(text, 8, 1, "an example", 10);  // "This is an example text."
+String Modification
+~~~~~~~~~~~~~~~~
 
-// Insert text
-myrtx_string_insert(text, 0, "Note: ", 6);  // "Note: This is an example text."
+.. code-block:: c
 
-// Erase part of the string
-myrtx_string_erase(text, 0, 6);  // "This is an example text."
+    myrtx_string_t* text = myrtx_string_create_from_cstr("This is a sample text.");
 
-// Truncate string
-myrtx_string_resize(text, 12);  // "This is an e" (truncated to 12 characters)
+    // Replace part of the string
+    myrtx_string_replace(text, 8, 1, "an example", 10);  // "This is an example text."
 
-myrtx_string_free(text);
-```
+    // Insert text
+    myrtx_string_insert(text, 0, "Note: ", 6);  // "Note: This is an example text."
 
-### String Searching
+    // Erase part of the string
+    myrtx_string_erase(text, 0, 6);  // "This is an example text."
 
-```c
-myrtx_string_t* haystack = myrtx_string_create_from_cstr("This is a sample text with sample words.");
+    // Truncate string
+    myrtx_string_resize(text, 12);  // "This is an e" (truncated to 12 characters)
 
-// Find first occurrence
-size_t pos = myrtx_string_find(haystack, "sample", 0);  // finds "sample" at position 10
+    myrtx_string_free(text);
 
-// Find next occurrence from position
-size_t next_pos = myrtx_string_find(haystack, "sample", pos + 1);  // finds next occurrence at position 28
+String Searching
+~~~~~~~~~~~~~
 
-// Find last occurrence
-size_t last_pos = myrtx_string_rfind(haystack, "sample", SIZE_MAX);  // finds last occurrence
+.. code-block:: c
 
-myrtx_string_free(haystack);
-```
+    myrtx_string_t* haystack = myrtx_string_create_from_cstr("This is a sample text with sample words.");
 
-### Using String Views
+    // Find first occurrence
+    size_t pos = myrtx_string_find(haystack, "sample", 0);  // finds "sample" at position 10
+
+    // Find next occurrence from position
+    size_t next_pos = myrtx_string_find(haystack, "sample", pos + 1);  // finds next occurrence at position 28
+
+    // Find last occurrence
+    size_t last_pos = myrtx_string_rfind(haystack, "sample", SIZE_MAX);  // finds last occurrence
+
+    myrtx_string_free(haystack);
+
+Using String Views
+~~~~~~~~~~~~~~~~
 
 String views are useful when you want to reference parts of strings without copying:
 
-```c
-const char* text = "This is a sample text.";
+.. code-block:: c
 
-// Create string view from C string
-myrtx_string_view_t view = myrtx_string_view_from_cstr(text);
+    const char* text = "This is a sample text.";
 
-// Create string view from buffer with length
-myrtx_string_view_t partial_view = myrtx_string_view_from_buffer(text + 8, 1);  // "a"
+    // Create string view from C string
+    myrtx_string_view_t view = myrtx_string_view_from_cstr(text);
 
-// Work with the view
-printf("View: %.*s\n", (int)partial_view.length, partial_view.data);  // "a"
+    // Create string view from buffer with length
+    myrtx_string_view_t partial_view = myrtx_string_view_from_buffer(text + 8, 1);  // "a"
 
-// String views don't need to be freed as they don't own memory
-```
+    // Work with the view
+    printf("View: %.*s\n", (int)partial_view.length, partial_view.data);  // "a"
 
-### Creating Formatted Strings
+    // String views don't need to be freed as they don't own memory
 
-```c
-// Create a new formatted string
-myrtx_string_t* formatted = myrtx_string_format("User: %s, ID: %d", "John", 12345);
+Creating Formatted Strings
+~~~~~~~~~~~~~~~~~~~~~~~
 
-// Or with VA list
-va_list args;
-va_start(args, format);
-myrtx_string_t* formatted_va = myrtx_string_format_va(format, args);
-va_end(args);
+.. code-block:: c
 
-myrtx_string_free(formatted);
-myrtx_string_free(formatted_va);
-```
+    // Create a new formatted string
+    myrtx_string_t* formatted = myrtx_string_format("User: %s, ID: %d", "John", 12345);
+
+    // Or with VA list
+    va_list args;
+    va_start(args, format);
+    myrtx_string_t* formatted_va = myrtx_string_format_va(format, args);
+    va_end(args);
+
+    myrtx_string_free(formatted);
+    myrtx_string_free(formatted_va);
 
 Advanced Concepts
------------------------
+---------------
 
-### Memory Reservation
+Memory Reservation
+~~~~~~~~~~~~~~~~
 
 If you know a string will grow to a certain size, you can reserve memory in advance to avoid repeated reallocations:
 
-```c
-myrtx_string_t* large_string = myrtx_string_create();
+.. code-block:: c
 
-// Reserve 1024 bytes
-myrtx_string_reserve(large_string, 1024);
+    myrtx_string_t* large_string = myrtx_string_create();
 
-// Now you can append up to 1024 bytes without reallocation
-for (int i = 0; i < 100; i++) {
-    myrtx_string_append_cstr(large_string, "Data ");
-}
+    // Reserve 1024 bytes
+    myrtx_string_reserve(large_string, 1024);
 
-myrtx_string_free(large_string);
-```
+    // Now you can append up to 1024 bytes without reallocation
+    for (int i = 0; i < 100; i++) {
+        myrtx_string_append_cstr(large_string, "Data ");
+    }
 
-### Memory Optimization
+    myrtx_string_free(large_string);
+
+Memory Optimization
+~~~~~~~~~~~~~~~~
 
 After a string has reached its final size, you can release excess memory:
 
-```c
-myrtx_string_t* str = myrtx_string_create();
-myrtx_string_reserve(str, 1024);  // Reserves 1024 bytes
+.. code-block:: c
 
-// ... perform string operations, e.g., using only 100 bytes ...
+    myrtx_string_t* str = myrtx_string_create();
+    myrtx_string_reserve(str, 1024);  // Reserves 1024 bytes
 
-// Reduce memory to the size actually needed
-myrtx_string_shrink_to_fit(str);
+    // ... perform string operations, e.g., using only 100 bytes ...
 
-myrtx_string_free(str);
-```
+    // Reduce memory to the size actually needed
+    myrtx_string_shrink_to_fit(str);
 
-### String Extraction
+    myrtx_string_free(str);
+
+String Extraction
+~~~~~~~~~~~~~~
 
 You can extract substrings:
 
-```c
-myrtx_string_t* source = myrtx_string_create_from_cstr("This is a long example text");
-myrtx_string_t* substring = myrtx_string_create();
+.. code-block:: c
 
-// Extract substring (from position 8, 1 character)
-myrtx_string_substr(source, 8, 1, substring);  // substring now contains "a"
+    myrtx_string_t* source = myrtx_string_create_from_cstr("This is a long example text");
+    myrtx_string_t* substring = myrtx_string_create();
 
-myrtx_string_free(source);
-myrtx_string_free(substring);
-```
+    // Extract substring (from position 8, 1 character)
+    myrtx_string_substr(source, 8, 1, substring);  // substring now contains "a"
+
+    myrtx_string_free(source);
+    myrtx_string_free(substring);
 
 Efficiency and Performance
 --------------------
