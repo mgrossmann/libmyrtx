@@ -350,35 +350,4 @@ Predefined Hash Functions
    :param key: Pointer to the integer
    :param key_size: Size of the integer (must be sizeof(int))
    :param user_data: Not used
-   :return: Hash value for the integer
-
-Example
-~~~~~~~
-
-.. code-block:: c
-
-   #include <myrtx/hashtable.h>
-   #include <myrtx/allocator.h>
-
-   int main() {
-       myrtx_allocator_t *allocator = myrtx_allocator_create_default();
-       myrtx_hashtable_t *table = myrtx_hashtable_create(
-           allocator,
-           myrtx_hashtable_hash_string,
-           myrtx_hashtable_compare_strings,
-           NULL
-       );
-
-       const char *key = "example";
-       int value = 42;
-
-       myrtx_hashtable_insert(table, key, strlen(key) + 1, &value, NULL);
-       int *retrieved;
-       if (myrtx_hashtable_get(table, key, strlen(key) + 1, &retrieved)) {
-           printf("Value: %d\n", *retrieved);
-       }
-
-       myrtx_hashtable_destroy(table, NULL, NULL);
-       myrtx_allocator_destroy(allocator);
-       return 0;
-   } 
+   :return: Hash value for the integer 

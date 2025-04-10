@@ -11,6 +11,7 @@ This section provides practical examples demonstrating the use of libmyrtx libra
    avl_tree_example
    context_example
    string_example
+   hashtable_example
 
 These examples demonstrate common usage patterns and best practices for working with the library.
 
