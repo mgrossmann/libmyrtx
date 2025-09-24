@@ -32,13 +32,14 @@ extensions = [
 ]
 
 templates_path = ['_templates']
-exclude_patterns = []
+exclude_patterns = [
+    'api/hashtable.rst',  # Outdated/unused page not in toctree
+]
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'sphinx_rtd_theme'
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 html_static_path = ['_static']
 
 html_logo = None  # Path to logo if you have one
@@ -47,7 +48,7 @@ html_favicon = None  # Path to favicon if you have one
 # Theme options
 html_theme_options = {
     'logo_only': False,
-    'display_version': True,
+    # 'display_version': True,  # Removed to silence unsupported theme option warning
     'prev_next_buttons_location': 'bottom',
     'style_external_links': False,
     'collapse_navigation': False,

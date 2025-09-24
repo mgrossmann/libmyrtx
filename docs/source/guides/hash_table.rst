@@ -1,10 +1,10 @@
 Hash Table Guide
-===============
+================
 
 This guide provides a comprehensive overview of the hash table implementation in libmyrtx and how to use it effectively in your applications.
 
 What is a Hash Table?
------------------
+---------------------
 
 A hash table is a data structure that provides fast key-value lookups with an average time complexity of O(1). The libmyrtx hash table implementation features:
 
@@ -15,7 +15,7 @@ A hash table is a data structure that provides fast key-value lookups with an av
 - High load factor with good performance characteristics
 
 When to Use a Hash Table
---------------------
+------------------------
 
 Hash tables are ideal for:
 
@@ -28,10 +28,10 @@ Hash tables are ideal for:
 They're particularly useful when performance is critical, and you don't need to maintain any order of the elements.
 
 Basic Usage
----------
+-----------
 
 Creating a Hash Table
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 You can create a hash table using the arena allocator for memory management or with standard malloc/free:
 
@@ -48,7 +48,7 @@ You can create a hash table using the arena allocator for memory management or w
 The second parameter is the initial capacity. Passing 0 will use the default capacity. The third and fourth parameters are functions for hashing and equality checking, respectively. If NULL is provided, the default functions (which work on string keys) are used.
 
 Inserting Elements
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~
 
 To insert elements into the hash table:
 
@@ -60,7 +60,7 @@ To insert elements into the hash table:
 If the key already exists, the value is updated and the function returns false. If a new entry is created, it returns true.
 
 Finding Elements
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 To find an element by key:
 
@@ -74,7 +74,7 @@ To find an element by key:
    }
 
 Removing Elements
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 To remove an element from the hash table:
 
@@ -87,7 +87,7 @@ To remove an element from the hash table:
    }
 
 Getting Hash Table Statistics
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can check the current size and capacity of the hash table:
 
@@ -99,10 +99,10 @@ You can check the current size and capacity of the hash table:
           size, capacity, (float)size / capacity);
 
 Advanced Usage
------------
+--------------
 
 Custom Hash Functions
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 You can provide custom hash functions for your specific key types:
 
@@ -128,7 +128,7 @@ You can provide custom hash functions for your specific key types:
    myrtx_hash_table_insert(int_table, &key1, &value1);
 
 Iterating Over a Hash Table
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can iterate over all entries in a hash table:
 
@@ -146,7 +146,7 @@ You can iterate over all entries in a hash table:
 The third parameter is user_data that will be passed to the callback function.
 
 Using with Complex Data Types
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For complex key types, you need custom hash and equality functions:
 
@@ -179,7 +179,7 @@ For complex key types, you need custom hash and equality functions:
        &arena, 0, hash_person, person_equals);
 
 Performance Considerations
-----------------------
+---------------------------
 
 The hash table implementation in libmyrtx is designed for performance. Here are some tips to get the best performance:
 
@@ -203,7 +203,7 @@ The hash table implementation in libmyrtx is designed for performance. Here are 
    Using the arena allocator can significantly improve performance by reducing the overhead of memory allocation.
 
 Common Use Cases
-------------
+----------------
 
 1. **Simple Dictionary**:
 
@@ -282,6 +282,6 @@ Common Use Cases
       }
 
 Conclusion
----------
+----------
 
 The hash table implementation in libmyrtx provides a powerful and flexible solution for key-value storage. By following the patterns described in this guide, you can leverage its strengths for a wide range of applications requiring fast lookup operations. 

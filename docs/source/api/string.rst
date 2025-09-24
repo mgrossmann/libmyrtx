@@ -113,6 +113,22 @@ String Operations
    :param ...: The format arguments.
    :return: 0 on success, negative value on error.
 
+Replace
+-------
+
+.. c:function:: bool myrtx_string_replace(myrtx_string_t* string, const char* old_str, const char* new_str)
+
+   Replaces all occurrences of ``old_str`` with ``new_str``.
+
+   - For strings backed by an arena, the replacement allocates a fresh buffer
+     sized exactly to the result. After replacement, ``capacity == length + 1``.
+   - For malloc-backed strings, capacity may be larger due to growth strategy.
+
+   :param string: Target string to modify in place
+   :param old_str: Substring to be replaced (must be non-empty)
+   :param new_str: Replacement substring
+   :return: true on success, false on allocation error
+
 .. c:function:: int myrtx_string_append_format_va(myrtx_string_t* string, const char* format, va_list args)
 
    Appends a formatted string to a string using a va_list.

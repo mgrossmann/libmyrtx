@@ -629,24 +629,24 @@ bool myrtx_string_replace(myrtx_string_t* str, const char* old_str, const char* 
     
     /* Use the result to replace the content of the original string */
     if (str->arena) {
-        /* With an arena, we allocate new memory */
+        /* With an arena, allocate exactly the required capacity */
         char* new_data = (char*)myrtx_arena_alloc(str->arena, temp->length + 1);
         if (!new_data) {
             myrtx_string_free(temp, true);
             return false;
         }
-        
         memcpy(new_data, temp->data, temp->length + 1);
         str->data = new_data;
+        str->length = temp->length;
+        str->capacity = temp->length + 1; /* EXACT capacity for arena path */
     } else {
-        /* With malloc, we can swap the buffers */
+        /* With malloc, we can swap the buffers and preserve capacity */
         char* temp_data = str->data;
         str->data = temp->data;
         temp->data = temp_data;
+        str->length = temp->length;
+        str->capacity = temp->capacity;
     }
-    
-    str->length = temp->length;
-    str->capacity = temp->capacity;
     
     /* Free the temporary string */
     myrtx_string_free(temp, true);

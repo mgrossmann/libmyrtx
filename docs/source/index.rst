@@ -1,5 +1,5 @@
 Welcome to libmyrtx's documentation!
-================================
+====================================
 
 .. only:: html
 
@@ -30,16 +30,16 @@ Features
    examples/index
 
 Getting Started
---------------
+---------------
 
 Requirements
-~~~~~~~~~~~
+~~~~~~~~~~~~
 
 - C99-compliant compiler
 - CMake 3.14 or higher
 
 Installation
-~~~~~~~~~~~
+~~~~~~~~~~~~
 
 Using CMake:
 
@@ -59,7 +59,7 @@ Using the build script:
    ./build.sh
 
 Integration
-~~~~~~~~~~
+~~~~~~~~~~~
 
 To integrate libmyrtx into your CMake project:
 

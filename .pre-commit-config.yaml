@@ -1,0 +1,10 @@
+repos:
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v17.0.6
+    hooks:
+      - id: clang-format
+        name: clang-format (C/C headers)
+        args: ["-style=file"]
+        files: ^(src|include|tests|examples)/.*\.(c|h)$
+        exclude: ^(build|cmake-build-debug|docs/build)/
+

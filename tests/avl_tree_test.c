@@ -9,6 +9,15 @@
 #include <string.h>
 #include <assert.h>
 
+/* Portable strdup replacement for C99 */
+static char* portable_strdup(const char* s) {
+    size_t len = strlen(s) + 1;
+    char* p = (char*)malloc(len);
+    if (!p) return NULL;
+    memcpy(p, s, len);
+    return p;
+}
+
 static int tests_passed = 0;
 static int tests_failed = 0;
 
@@ -386,8 +395,8 @@ void test_custom_free_callbacks(void) {
         char name[20];
     };
     
-    char* key1 = strdup("key1");
-    char* key2 = strdup("key2");
+    char* key1 = portable_strdup("key1");
+    char* key2 = portable_strdup("key2");
     struct test_data* data1 = malloc(sizeof(struct test_data));
     struct test_data* data2 = malloc(sizeof(struct test_data));
     

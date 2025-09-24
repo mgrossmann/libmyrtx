@@ -336,7 +336,7 @@ void test_resize(void) {
     }
     
     /* Verify size */
-    if (myrtx_hash_table_size(table) != num_entries) {
+    if (myrtx_hash_table_size(table) != (size_t)num_entries) {
         myrtx_arena_free(&arena);
         TEST_FAILED("Size incorrect after resize");
     }

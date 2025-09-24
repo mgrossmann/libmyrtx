@@ -39,3 +39,27 @@ endif()
 # Install targets
 install(TARGETS myrtx DESTINATION lib)
 install(DIRECTORY include/ DESTINATION include)
+
+# Formatting helpers (clang-format)
+find_program(CLANG_FORMAT NAMES clang-format)
+if(CLANG_FORMAT)
+  # Collect sources and headers to format
+  file(GLOB_RECURSE MYRTX_FORMAT_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_SOURCE_DIR}/src/*.c"
+    "${CMAKE_SOURCE_DIR}/include/*.h"
+    "${CMAKE_SOURCE_DIR}/tests/*.c"
+    "${CMAKE_SOURCE_DIR}/examples/*.c"
+  )
+
+  add_custom_target(format
+    COMMAND ${CLANG_FORMAT} -i -style=file ${MYRTX_FORMAT_SOURCES}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running clang-format on project sources"
+  )
+
+  add_custom_target(format-check
+    COMMAND ${CLANG_FORMAT} --dry-run -Werror -style=file ${MYRTX_FORMAT_SOURCES}
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Checking formatting (fails if changes are needed)"
+  )
+endif()

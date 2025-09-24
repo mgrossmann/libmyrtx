@@ -333,6 +333,11 @@ void test_string_operations(void) {
         myrtx_arena_free(&arena);
         TEST_FAILED("String replace resulted in incorrect values");
     }
+    /* Capacity should equal length+1 for arena-backed strings after replace */
+    if (to_replace->capacity != to_replace->length + 1) {
+        myrtx_arena_free(&arena);
+        TEST_FAILED("String replace capacity not equal to length+1");
+    }
     
     /* Test multiple replacements */
     myrtx_string_t* multi_replace = myrtx_string_from_cstr(&arena, "one two one two one");

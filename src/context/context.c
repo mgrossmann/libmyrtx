@@ -74,6 +74,7 @@ myrtx_context_t* myrtx_context_create(myrtx_arena_t* global_arena) {
     /* Set up the global arena */
     if (global_arena) {
         context->global_arena = global_arena;
+        context->owns_global_arena = false;
     } else {
         context->global_arena = (myrtx_arena_t*)malloc(sizeof(myrtx_arena_t));
         if (!context->global_arena) {
@@ -86,6 +87,7 @@ myrtx_context_t* myrtx_context_create(myrtx_arena_t* global_arena) {
             free(context);
             return NULL;
         }
+        context->owns_global_arena = true;
     }
     
     /* Set up the temporary arena */
@@ -148,8 +150,8 @@ void myrtx_context_destroy(myrtx_context_t* context) {
     myrtx_arena_free(context->temp_arena);
     free(context->temp_arena);
     
-    /* Only free the global arena if we created it */
-    if (context->global_arena) {
+    /* Only free the global arena if we own it */
+    if (context->owns_global_arena && context->global_arena) {
         myrtx_arena_free(context->global_arena);
         free(context->global_arena);
     }

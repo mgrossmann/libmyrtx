@@ -13,12 +13,19 @@ Types
 
 .. c:type:: myrtx_context_t
 
-   Opaque structure representing a context.
+   Context structure holding arenas, scratch pool, extensions and error state.
 
    .. code-block:: c
 
       typedef struct myrtx_context {
-          // Internal details
+          myrtx_arena_t* global_arena;      /* Global arena for long-lived allocations */
+          myrtx_arena_t* temp_arena;        /* Temporary arena for short-lived allocations */
+          myrtx_scratch_pool_t scratch_pool;/* Pool of scratch arenas for reuse */
+          bool owns_global_arena;           /* Whether context frees global_arena */
+          void* extension_data[MYRTX_MAX_EXTENSION_TYPES];
+          unsigned int flags;
+          char error_buffer[256];
+          int error_code;
       } myrtx_context_t;
 
 .. c:type:: myrtx_extension_info_t
@@ -37,10 +44,15 @@ Types
 Creation and Destruction
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-.. c:function:: myrtx_context_t* myrtx_context_create(void)
+.. c:function:: myrtx_context_t* myrtx_context_create(myrtx_arena_t* global_arena)
 
    Creates a new context.
 
+   If ``global_arena`` is NULL, a new arena is created and owned by the
+   context. If a non-NULL arena is provided, the context references it
+   and does not take ownership (it will not be freed by the context).
+
+   :param global_arena: Optional external arena to use (NULL to create one)
    :return: Pointer to a new context or NULL on error
 
 .. c:function:: myrtx_context_t* myrtx_context_create_child(myrtx_context_t* parent)
@@ -50,11 +62,23 @@ Creation and Destruction
    :param parent: Pointer to the parent context
    :return: Pointer to the new child context or NULL on error
 
-.. c:function:: void myrtx_context_free(myrtx_context_t* ctx)
+.. c:function:: void myrtx_context_destroy(myrtx_context_t* context)
 
    Frees a context and all associated resources.
 
-   :param ctx: Pointer to the context to free
+   Frees the temporary arena and extension data. The global arena is freed
+   only if the context owns it (i.e., it was created internally).
+
+   :param context: Pointer to the context to free
+
+Ownership Semantics
+~~~~~~~~~~~~~~~~~~~
+
+- External arena passed to :c:func:`myrtx_context_create` → context sets
+  ``owns_global_arena = false`` and will not free the arena in
+  :c:func:`myrtx_context_destroy`.
+- No arena passed (NULL) → context creates the arena, sets
+  ``owns_global_arena = true``, and will free it on destroy.
 
 Error Handling
 ~~~~~~~~~~~~

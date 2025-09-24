@@ -58,6 +58,15 @@ typedef struct myrtx_arena_block {
 } myrtx_arena_block_t;
 
 /**
+ * @brief A temporary marker captures the allocation point by
+ * storing the current block and its used offset.
+ */
+typedef struct myrtx_arena_marker {
+    myrtx_arena_block_t* block; /**< Block active when marker was created */
+    size_t used;                /**< Used bytes inside that block at marker time */
+} myrtx_arena_marker_t;
+
+/**
  * @brief Main structure for the arena allocator
  */
 typedef struct myrtx_arena {
@@ -66,7 +75,7 @@ typedef struct myrtx_arena {
     size_t block_size;                       /**< Default size for new blocks */
     size_t total_allocated;                  /**< Total allocated memory */
     unsigned int temp_count;                 /**< Number of active temporary markers */
-    size_t temp_markers[MYRTX_ARENA_MAX_TEMP_MARKERS]; /**< Temporary markers */
+    myrtx_arena_marker_t temp_markers[MYRTX_ARENA_MAX_TEMP_MARKERS]; /**< Temporary markers */
 } myrtx_arena_t;
 
 /**

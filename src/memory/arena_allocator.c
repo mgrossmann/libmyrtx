@@ -184,29 +184,15 @@ size_t myrtx_arena_temp_begin(myrtx_arena_t* arena) {
     if (!arena || arena->temp_count >= MYRTX_ARENA_MAX_TEMP_MARKERS) {
         return (size_t)-1;
     }
-    
-    /* Mark the current state */
+
     size_t marker = arena->temp_count;
     
-    /* Calculate sum of used bytes in all blocks */
-    size_t total_used = 0;
-    myrtx_arena_block_t* block = arena->first;
-    myrtx_arena_block_t* current = NULL;
-    
-    while (block) {
-        total_used += block->used;
-        if (block == arena->current) {
-            current = block;
-        }
-        block = block->next;
-    }
-    
-    /* Store relative position of current block */
-    size_t current_pos = (current) ? (uintptr_t)current - (uintptr_t)arena->first : 0;
-    
-    /* Store marker information (encoded as combined value) */
-    arena->temp_markers[arena->temp_count++] = (total_used << 16) | (current_pos & 0xFFFF);
-    
+    /* Snapshot the current block and its used offset */
+    myrtx_arena_marker_t m;
+    m.block = arena->current;
+    m.used = (arena->current) ? arena->current->used : 0;
+    arena->temp_markers[arena->temp_count++] = m;
+
     return marker;
 }
 
@@ -214,51 +200,41 @@ void myrtx_arena_temp_end(myrtx_arena_t* arena, size_t marker) {
     if (!arena || marker >= arena->temp_count || marker >= MYRTX_ARENA_MAX_TEMP_MARKERS) {
         return;
     }
-    
-    /* Decode marker information */
-    size_t marker_data = arena->temp_markers[marker];
-    size_t total_used = marker_data >> 16;
-    size_t current_pos = marker_data & 0xFFFF;
-    
-    /* Reset arena to marked state */
-    myrtx_arena_block_t* block = arena->first;
-    size_t remaining = total_used;
-    myrtx_arena_block_t* last_valid_block = NULL;
-    
-    while (block && remaining > 0) {
-        if (remaining > block->size) {
-            block->used = block->size;
-            remaining -= block->size;
-        } else {
-            block->used = remaining;
-            remaining = 0;
-        }
-        
-        last_valid_block = block;
-        block = block->next;
+
+    myrtx_arena_marker_t m = arena->temp_markers[marker];
+    myrtx_arena_block_t* target = m.block;
+
+    if (!target) {
+        /* Nothing to restore; should not happen for a valid arena */
+        arena->temp_count = marker; /* drop this and later markers */
+        return;
     }
-    
-    /* Free any blocks that were allocated after the marker was set */
-    if (last_valid_block) {
-        myrtx_arena_block_t* to_free = last_valid_block->next;
-        last_valid_block->next = NULL;
-        
-        while (to_free) {
-            myrtx_arena_block_t* next = to_free->next;
-            free(to_free->base);
-            free(to_free);
-            to_free = next;
-        }
-    }
-    
-    /* Restore current block */
-    if (current_pos > 0) {
-        arena->current = (myrtx_arena_block_t*)((uintptr_t)arena->first + current_pos);
+
+    /* Restore used of the target block */
+    if (target->used > m.used) {
+        target->used = m.used;
     } else {
-        arena->current = arena->first;
+        /* If used somehow shrank or stayed same, still ensure to set to snapshot value */
+        target->used = m.used;
     }
-    
-    /* Remove all subsequent markers */
+
+    /* Free blocks allocated after the target block and update total_allocated */
+    myrtx_arena_block_t* to_free = target->next;
+    target->next = NULL;
+    while (to_free) {
+        myrtx_arena_block_t* next = to_free->next;
+        if (to_free->base) {
+            free(to_free->base);
+        }
+        arena->total_allocated -= to_free->size;
+        free(to_free);
+        to_free = next;
+    }
+
+    /* Set current block back to the target */
+    arena->current = target;
+
+    /* Drop this and all later markers */
     arena->temp_count = marker;
 }
 

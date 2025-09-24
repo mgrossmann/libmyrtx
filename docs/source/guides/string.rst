@@ -1,5 +1,5 @@
 String Utility Guide
-================
+======================
 
 Overview
 --------
@@ -19,7 +19,7 @@ The standard C library provides basic string functions, but has several signific
 The ``myrtx_string_t`` implementation provides solutions to these problems and adds useful functions that simplify string processing in C applications.
 
 Core Concepts
------------
+-------------
 
 The String library works with two main concepts:
 
@@ -27,20 +27,20 @@ The String library works with two main concepts:
 2. **String Views**: ``myrtx_string_view_t`` is a lightweight, non-owning view of a string or memory region.
 
 Dynamic Strings
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
 
 Dynamic strings automatically manage their own memory. They grow as needed to accommodate content and can efficiently perform operations like appending, inserting, and deleting.
 
 String Views
-~~~~~~~~~~
+~~~~~~~~~~~~
 
 String views provide a non-owning view of a string or memory region. They consist of a pointer to the data and a length, and are useful when you want to reference part of a larger string without copying the content.
 
 Basic Usage
-----------
+-----------
 
 Creating and Freeing Strings
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: c
 
@@ -63,7 +63,7 @@ Creating and Freeing Strings
     myrtx_string_free(greeting);
 
 With Arena Allocator
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 For even more efficient memory management, the String library can be integrated with the libmyrtx Arena Allocator:
 
@@ -85,10 +85,10 @@ For even more efficient memory management, the String library can be integrated 
     myrtx_arena_free(&arena);
 
 String Operations
----------------
+-----------------
 
 Appending Data
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~
 
 .. code-block:: c
 
@@ -112,7 +112,7 @@ Appending Data
     myrtx_string_free(name);
 
 String Comparison
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 .. code-block:: c
 
@@ -132,7 +132,7 @@ String Comparison
     myrtx_string_free(str2);
 
 String Modification
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: c
 
@@ -153,7 +153,7 @@ String Modification
     myrtx_string_free(text);
 
 String Searching
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 .. code-block:: c
 
@@ -171,7 +171,7 @@ String Searching
     myrtx_string_free(haystack);
 
 Using String Views
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~
 
 String views are useful when you want to reference parts of strings without copying:
 
@@ -191,7 +191,7 @@ String views are useful when you want to reference parts of strings without copy
     // String views don't need to be freed as they don't own memory
 
 Creating Formatted Strings
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: c
 
@@ -208,10 +208,10 @@ Creating Formatted Strings
     myrtx_string_free(formatted_va);
 
 Advanced Concepts
----------------
+-----------------
 
 Memory Reservation
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~
 
 If you know a string will grow to a certain size, you can reserve memory in advance to avoid repeated reallocations:
 
@@ -230,7 +230,7 @@ If you know a string will grow to a certain size, you can reserve memory in adva
     myrtx_string_free(large_string);
 
 Memory Optimization
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 After a string has reached its final size, you can release excess memory:
 
@@ -247,7 +247,7 @@ After a string has reached its final size, you can release excess memory:
     myrtx_string_free(str);
 
 String Extraction
-~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 You can extract substrings:
 
@@ -263,7 +263,7 @@ You can extract substrings:
     myrtx_string_free(substring);
 
 Efficiency and Performance
---------------------
+--------------------------
 
 The String library is designed for efficiency:
 
@@ -273,7 +273,7 @@ The String library is designed for efficiency:
 4. **Arena Integration**: With the Arena Allocator, many temporary strings can be efficiently managed.
 
 Best Practices
-------------
+--------------
 
 1. **Always Free Strings**: Call `myrtx_string_free()` when a string is no longer needed.
 
@@ -286,7 +286,7 @@ Best Practices
 5. **Error Checking**: Check the return values of string functions to detect errors.
 
 Migration Example
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 Here's an example of how to migrate from standard C string processing to the libmyrtx String library:
 
@@ -328,7 +328,7 @@ After (with libmyrtx):
     myrtx_string_free(greeting);
 
 Error Handling
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~
 
 String functions return error codes when operations fail:
 

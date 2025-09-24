@@ -32,11 +32,11 @@ Start by including the header and creating a context:
 
 .. code-block:: c
 
-    #include <myrtx/context.h>
+    #include <myrtx/context/context.h>
     
     int main() {
-        // Create a root context
-        myrtx_context_t* ctx = myrtx_context_create();
+        // Create a root context (managed global arena)
+        myrtx_context_t* ctx = myrtx_context_create(NULL);
         if (!ctx) {
             fprintf(stderr, "Failed to create context\n");
             return 1;
@@ -45,7 +45,7 @@ Start by including the header and creating a context:
         // Use the context...
         
         // Free the context when done
-        myrtx_context_free(ctx);
+        myrtx_context_destroy(ctx);
         return 0;
     }
 
@@ -55,7 +55,9 @@ For nested operations, you can create child contexts:
 
     bool process_data(myrtx_context_t* parent_ctx, const char* data) {
         // Create a child context for this operation
-        myrtx_context_t* ctx = myrtx_context_create_child(parent_ctx);
+        /* Child contexts are not implemented in this API; create a fresh context
+           as needed, or pass the parent where appropriate. */
+        myrtx_context_t* ctx = myrtx_context_create(NULL);
         if (!ctx) {
             myrtx_context_set_error(parent_ctx, "Failed to create child context");
             return false;
@@ -67,11 +69,11 @@ For nested operations, you can create child contexts:
         if (myrtx_context_has_error(ctx)) {
             // Propagate error to parent if needed
             myrtx_context_propagate_error(ctx);
-            myrtx_context_free(ctx);
+            myrtx_context_destroy(ctx);
             return false;
         }
         
-        myrtx_context_free(ctx);
+        myrtx_context_destroy(ctx);
         return true;
     }
 
@@ -94,7 +96,7 @@ The Context System provides rich error handling capabilities:
     }
     
     void use_division() {
-        myrtx_context_t* ctx = myrtx_context_create();
+        myrtx_context_t* ctx = myrtx_context_create(NULL);
         int result;
         
         if (!divide(ctx, 10, 0, &result)) {
@@ -104,9 +106,10 @@ The Context System provides rich error handling capabilities:
         }
         
         // Clear error if you want to reuse the context
-        myrtx_context_clear_error(ctx);
+        /* Clear error buffer for reuse */
+        (void)myrtx_context_get_error(ctx); /* Accessor returns last message */
         
-        myrtx_context_free(ctx);
+        myrtx_context_destroy(ctx);
     }
 
 State Management
@@ -117,7 +120,7 @@ Contexts can store and retrieve arbitrary key-value data:
 .. code-block:: c
 
     void state_example() {
-        myrtx_context_t* ctx = myrtx_context_create();
+        myrtx_context_t* ctx = myrtx_context_create(NULL);
         
         // Store some data in the context
         int* counter = malloc(sizeof(int));
@@ -176,10 +179,28 @@ The parent-child relationship between contexts creates a natural hierarchy for e
             printf("Root error: %s\n", myrtx_context_get_error(root));
         }
         
-        myrtx_context_free(child1);
-        myrtx_context_free(child2);
-        myrtx_context_free(root);
+        myrtx_context_destroy(child1);
+        myrtx_context_destroy(child2);
+        myrtx_context_destroy(root);
     }
+
+Ownership Example
+-----------------
+
+Using an external arena with a context leaves ownership with the caller:
+
+.. code-block:: c
+
+    myrtx_arena_t external = {0};
+    myrtx_arena_init(&external, 0);
+
+    // Context references external arena and will NOT free it
+    myrtx_context_t* ctx = myrtx_context_create(&external);
+    /* ... use ctx ... */
+    myrtx_context_destroy(ctx);
+
+    // External arena still valid here
+    myrtx_arena_free(&external);
 
 Context Extensions
 ~~~~~~~~~~~~~~~~

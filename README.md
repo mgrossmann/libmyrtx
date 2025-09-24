@@ -2,6 +2,7 @@
 
 libmyrtx is a C99 library that provides useful functions and data structures for use in various C projects. The library focuses on memory allocators, strings, and other fundamental data structures.
 
+[![CI](https://github.com/mgrossmann/libmyrtx/actions/workflows/ci.yml/badge.svg)](https://github.com/mgrossmann/libmyrtx/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/libmyrtx/badge/?version=latest)](https://libmyrtx.readthedocs.io/en/latest/?badge=latest)
 
 ## Features
@@ -240,4 +241,4 @@ This project is licensed under the MIT License. See `LICENSE` for more details.
 
 ## Contributing
 
-Contributions are welcome! Please open an issue first to discuss changes before creating a pull request. 
+Contributions are welcome! Please open an issue first to discuss changes before creating a pull request. See [TODO.md](TODO.md) for the current task list and roadmap.

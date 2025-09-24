@@ -12,6 +12,16 @@
 #define TEST_PASSED() printf("PASSED: %s\n", __func__)
 #define TEST_FAILED(msg) do { printf("FAILED: %s - %s\n", __func__, msg); exit(1); } while(0)
 
+/* Portable strdup replacement for C99 */
+static char* portable_strdup(const char* s) {
+    if (!s) return NULL;
+    size_t len = strlen(s) + 1;
+    char* p = (char*)malloc(len);
+    if (!p) return NULL;
+    memcpy(p, s, len);
+    return p;
+}
+
 /* Test extension data */
 typedef struct {
     int value;
@@ -271,7 +281,7 @@ void test_context_extensions(void) {
     
     /* Modify extension data */
     ext->value = 42;
-    ext->data = strdup("Test extension data");
+    ext->data = portable_strdup("Test extension data");
     if (!ext->data) {
         TEST_FAILED("Failed to allocate extension data");
     }
@@ -330,6 +340,59 @@ void test_context_error_handling(void) {
     
     myrtx_context_destroy(ctx);
     
+    TEST_PASSED();
+}
+
+/* Test context ownership of global arena */
+void test_context_ownership(void) {
+    /* External arena case: context must not free the arena */
+    myrtx_arena_t external = {0};
+    if (!myrtx_arena_init(&external, 0)) {
+        TEST_FAILED("Failed to initialize external arena");
+    }
+
+    /* Keep some allocation in the external arena */
+    void* before = myrtx_arena_alloc(&external, 64);
+    if (!before) {
+        myrtx_arena_free(&external);
+        TEST_FAILED("External pre-allocation failed");
+    }
+    memset(before, 0x5A, 64);
+
+    myrtx_context_t* ctx = myrtx_context_create(&external);
+    if (!ctx) {
+        myrtx_arena_free(&external);
+        TEST_FAILED("Failed to create context with external arena");
+    }
+
+    /* Allocate through context (global arena) */
+    void* mem = myrtx_context_alloc(ctx, 32);
+    if (!mem) {
+        myrtx_context_destroy(ctx);
+        myrtx_arena_free(&external);
+        TEST_FAILED("Failed to allocate via context on external arena");
+    }
+
+    /* Destroy context: must NOT free external */
+    myrtx_context_destroy(ctx);
+
+    /* External arena should still be usable */
+    void* after = myrtx_arena_alloc(&external, 16);
+    if (!after) {
+        myrtx_arena_free(&external);
+        TEST_FAILED("External arena unusable after context destroy");
+    }
+
+    /* Pre-marker data should still be intact */
+    unsigned char* b = (unsigned char*)before;
+    for (size_t i = 0; i < 64; i++) {
+        if (b[i] != 0x5A) {
+            myrtx_arena_free(&external);
+            TEST_FAILED("External arena data corrupted by context destroy");
+        }
+    }
+
+    myrtx_arena_free(&external);
     TEST_PASSED();
 }
 

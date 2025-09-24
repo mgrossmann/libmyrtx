@@ -341,6 +341,98 @@ void test_arena_calloc(void) {
     TEST_PASSED();
 }
 
+void test_arena_temp_multiblock(void) {
+    myrtx_arena_t arena = {0};
+    /* Use a small block size to force multiple blocks */
+    const size_t block_size = 256;
+    if (!myrtx_arena_init(&arena, block_size)) {
+        TEST_FAILED("Could not initialize arena with small block size");
+    }
+
+    /* Initial allocation before marker */
+    void* before_ptr = myrtx_arena_alloc(&arena, 128);
+    if (!before_ptr) {
+        TEST_FAILED("Initial allocation failed");
+    }
+    memset(before_ptr, 0xAB, 128);
+
+    size_t total_before, used_before, blocks_before;
+    myrtx_arena_stats(&arena, &total_before, &used_before, &blocks_before);
+
+    /* Sanity: at this point we should have exactly one block */
+    if (blocks_before != 1) {
+        TEST_FAILED("Expected exactly one block before marker");
+    }
+
+    /* Save current block pointer at marker time */
+    myrtx_arena_block_t* saved_block = arena.current;
+
+    /* Set marker */
+    size_t marker = myrtx_arena_temp_begin(&arena);
+    if (marker == (size_t)-1) {
+        TEST_FAILED("Could not set temporary marker");
+    }
+
+    /* Allocate enough to cross into multiple new blocks */
+    for (int i = 0; i < 10; i++) {
+        void* p = myrtx_arena_alloc(&arena, 200);
+        if (!p) {
+            TEST_FAILED("Allocation during multiblock temp region failed");
+        }
+        memset(p, i, 200);
+    }
+
+    size_t total_during, used_during, blocks_during;
+    myrtx_arena_stats(&arena, &total_during, &used_during, &blocks_during);
+    if (blocks_during <= blocks_before) {
+        TEST_FAILED("Expected more blocks during temporary allocations");
+    }
+    if (used_during <= used_before) {
+        TEST_FAILED("Used should increase during temporary allocations");
+    }
+
+    /* End marker and validate restoration */
+    myrtx_arena_temp_end(&arena, marker);
+
+    size_t total_after, used_after, blocks_after;
+    myrtx_arena_stats(&arena, &total_after, &used_after, &blocks_after);
+
+    if (used_after != used_before) {
+        TEST_FAILED("Used after temp_end should equal used before");
+    }
+    if (blocks_after != blocks_before) {
+        TEST_FAILED("Block count after temp_end should equal before");
+    }
+    if (arena.current != saved_block) {
+        TEST_FAILED("Current block not restored to marker block");
+    }
+    if (saved_block->next != NULL) {
+        TEST_FAILED("Blocks after marker block were not freed");
+    }
+
+    /* Verify data before marker preserved */
+    unsigned char* b = (unsigned char*)before_ptr;
+    for (size_t i = 0; i < 128; i++) {
+        if (b[i] != 0xAB) {
+            TEST_FAILED("Data before marker corrupted after temp_end");
+        }
+    }
+
+    /* Allocate again and ensure we still only have one block */
+    void* after_ptr = myrtx_arena_alloc(&arena, 64);
+    if (!after_ptr) {
+        TEST_FAILED("Allocation after temp_end failed");
+    }
+    myrtx_arena_stats(&arena, NULL, NULL, &blocks_after);
+    if (blocks_after != 1) {
+        TEST_FAILED("Unexpected block count after new allocation");
+    }
+
+    myrtx_arena_free(&arena);
+
+    TEST_PASSED();
+}
+
 void test_arena_aligned(void) {
     myrtx_arena_t arena = {0};
     if (!myrtx_arena_init(&arena, 0)) {
@@ -377,6 +469,7 @@ int main(void) {
     test_arena_temp();
     test_arena_scratch();
     test_arena_calloc();
+    test_arena_temp_multiblock();
     test_arena_aligned();
     
     printf("\nAll tests successful!\n");

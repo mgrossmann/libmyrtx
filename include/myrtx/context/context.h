@@ -55,6 +55,7 @@ typedef struct myrtx_context {
     myrtx_arena_t* global_arena;      /**< Global arena for long-lived allocations */
     myrtx_arena_t* temp_arena;        /**< Temporary arena for short-lived allocations */
     myrtx_scratch_pool_t scratch_pool; /**< Pool of scratch arenas for reuse */
+    bool owns_global_arena;           /**< Whether context owns and should free global_arena */
     
     void* extension_data[MYRTX_MAX_EXTENSION_TYPES]; /**< Extension storage */
     unsigned int flags;               /**< Context flags */
